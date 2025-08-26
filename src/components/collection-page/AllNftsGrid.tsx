@@ -261,7 +261,7 @@ function isInCategory(metadata: any, category: Category): boolean {
                 )}
 
                 {/* Compliance Badge */}
-                {item.metadata?.attributes?.some((attr: any) => 
+                {Array.isArray(item.metadata?.attributes) && item.metadata.attributes.some((attr: any) => 
                   attr.trait_type === "compliance" && attr.value === "verified"
                 ) && (
                   <Badge
