@@ -1,5 +1,5 @@
 import type { Chain } from "thirdweb";
-import { avalancheFuji, polygonAmoy } from "./chains";
+import { onechainTestnet, onechainMainnet, avalancheFuji, polygonAmoy } from "./chains";
 
 export type NftContract = {
   address: string;
@@ -10,15 +10,45 @@ export type NftContract = {
   description?: string;
   thumbnailUrl?: string;
   slug?: string;
+  isDefault?: boolean;
 };
 
 /**
  * Below is a list of all NFT contracts supported by your marketplace(s)
- * This is of course hard-coded for demo purpose
- *
- * In reality, the list should be dynamically fetched from your own data source
+ * OneChain contracts are prioritized and shown first
  */
 export const NFT_CONTRACTS: NftContract[] = [
+  // OneChain Contracts (Primary)
+  {
+    address: "0x0000000000000000000000000000000000000000", // Replace with deployed PropertyNFT address
+    chain: onechainTestnet,
+    title: "OneChain Property NFTs",
+    description: "Tokenized real-world assets on OneChain network",
+    thumbnailUrl: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=400&fit=crop",
+    slug: "onechain-property-nfts",
+    type: "ERC721",
+    isDefault: true,
+  },
+  {
+    address: "0x0000000000000000000000000000000000000000", // Replace with deployed Fractionalizer address
+    chain: onechainTestnet,
+    title: "OneChain Fractionalized Assets",
+    description: "Fractional ownership tokens for real-world assets",
+    thumbnailUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=400&fit=crop",
+    slug: "onechain-fractionalized",
+    type: "ERC1155",
+  },
+  {
+    address: "0x0000000000000000000000000000000000000000", // Replace with deployed PropertyNFT address (mainnet)
+    chain: onechainMainnet,
+    title: "OneChain Property NFTs (Mainnet)",
+    description: "Production tokenized real-world assets on OneChain",
+    thumbnailUrl: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=400&fit=crop",
+    slug: "onechain-property-mainnet",
+    type: "ERC721",
+  },
+
+  // Legacy Contracts (Secondary support)
   {
     address: "0x6b869a0cF84147f05a447636c42b8E53De65714E",
     chain: avalancheFuji,
@@ -36,7 +66,6 @@ export const NFT_CONTRACTS: NftContract[] = [
     slug: "ugly-waifu",
     type: "ERC721",
   },
-
   {
     address: "0x0896Db00D8987Fba2152aa7c14c4255eBC7354cE",
     chain: avalancheFuji,
@@ -69,7 +98,28 @@ export const NFT_CONTRACTS: NftContract[] = [
     chain: avalancheFuji,
     title: "Cats (ERC1155)",
     thumbnailUrl:
-      "https://258c828e8cc853bf5e0efd001055fb39.ipfscdn.io/ipfs/bafybeif2nz6wbwuryijk2c4ayypocibexdeirlvmciqjyvlzz46mzoirtm/0.png",
+      "https://258c828e8cc853bf5e0efd001055fb39.ipfscdn.io/ipfs/bafybeif2nz6wbwuryijk2c4ayypocibexdeirlvmcqbwfvi3ihoi3igd27jwe/0.png",
     type: "ERC1155",
   },
 ];
+
+/**
+ * Get the default NFT contract (OneChain)
+ */
+export const getDefaultNftContract = (): NftContract => {
+  const defaultContract = NFT_CONTRACTS.find(contract => contract.isDefault);
+  if (!defaultContract) {
+    // Fallback to first OneChain contract if no default is explicitly set
+    return NFT_CONTRACTS.find(contract => contract.chain.id === 1001) || NFT_CONTRACTS[0];
+  }
+  return defaultContract;
+};
+
+/**
+ * Get OneChain contracts only
+ */
+export const getOneChainContracts = (): NftContract[] => {
+  return NFT_CONTRACTS.filter(contract => 
+    contract.chain.id === 1001 || contract.chain.id === 1000
+  );
+};

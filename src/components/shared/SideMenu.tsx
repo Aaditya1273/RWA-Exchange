@@ -1,8 +1,10 @@
 "use client";
 
 import { client } from "@/consts/client";
+import { defaultChain, supportedChains } from "@/consts/chains";
 import { useGetENSAvatar } from "@/hooks/useGetENSAvatar";
 import { useGetENSName } from "@/hooks/useGetENSName";
+import { useChainSwitching } from "@/hooks/useChainSwitching";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import { Link } from "@chakra-ui/next-js";
 import {
@@ -18,6 +20,10 @@ import {
   useColorMode,
   useDisclosure,
   VStack,
+  Badge,
+  HStack,
+  Text,
+  Divider,
 } from "@chakra-ui/react";
 import { useRef } from "react";
 import { FaRegMoon } from "react-icons/fa";
@@ -38,6 +44,13 @@ export function SideMenu() {
   const { data: ensAvatar } = useGetENSAvatar({ ensName });
   const { colorMode, toggleColorMode } = useColorMode();
   const wallet = useActiveWallet();
+  const {
+    isOnSupportedChain,
+    isOnDefaultChain,
+    switchToDefaultChain,
+    switchToChain,
+    currentChain,
+  } = useChainSwitching();
 
   return (
     <>
@@ -63,11 +76,62 @@ export function SideMenu() {
                 <ConnectButton 
                   client={client}
                   theme={colorMode}
+                  chain={defaultChain}
+                  chains={supportedChains}
                   connectButton={{
                     label: "Connect Wallet",
                   }}
+                  connectModal={{
+                    title: "Connect to OneChain",
+                    titleIcon: "🔗",
+                    showThirdwebBranding: false,
+                  }}
                 />
               </Box>
+
+              {account && (
+                <>
+                  <Divider />
+                  <VStack spacing={2} align="stretch">
+                    <Text fontSize="sm" fontWeight="bold" color="gray.600">
+                      Network Status
+                    </Text>
+                    
+                    <HStack justify="space-between">
+                      <Text fontSize="sm">Current Network:</Text>
+                      <Badge 
+                        colorScheme={isOnSupportedChain ? (isOnDefaultChain ? "green" : "yellow") : "red"}
+                        variant="solid"
+                      >
+                        {currentChain?.name || "Unknown"}
+                      </Badge>
+                    </HStack>
+
+                    {!isOnSupportedChain && (
+                      <Button
+                        size="sm"
+                        colorScheme="red"
+                        variant="outline"
+                        onClick={switchToDefaultChain}
+                      >
+                        Switch to {defaultChain.name}
+                      </Button>
+                    )}
+
+                    {isOnSupportedChain && !isOnDefaultChain && (
+                      <Button
+                        size="sm"
+                        colorScheme="blue"
+                        variant="outline"
+                        onClick={switchToDefaultChain}
+                      >
+                        Switch to {defaultChain.name}
+                      </Button>
+                    )}
+                  </VStack>
+                  <Divider />
+                </>
+              )}
               
               <Link href="/landing" _hover={{ textDecoration: "none" }} onClick={onClose}>
                 <Button variant="ghost" w="full" justifyContent="flex-start">

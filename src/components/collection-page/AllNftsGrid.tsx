@@ -11,7 +11,13 @@ import {
   Text,
   Button,
   Select,
+  Badge,
+  HStack,
+  Icon,
+  VStack,
+  useColorModeValue,
 } from "@chakra-ui/react";
+import { FaLink, FaCheckCircle } from "react-icons/fa";
 import { useState } from "react";
 import {
   MdKeyboardDoubleArrowLeft,
@@ -38,6 +44,10 @@ export function AllNftsGrid({ category = "all" }: { category?: Category }) {
   const totalItems: bigint = supplyInfo
     ? supplyInfo.endTokenId - supplyInfo.startTokenId + 1n
     : 0n;
+    
+  const isOneChain = nftContract.chain.id === 1001 || nftContract.chain.id === 1000;
+  const cardBg = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
   const numberOfPages: number = Number(
     (totalItems + BigInt(itemsPerPage) - 1n) / BigInt(itemsPerPage)
   );
@@ -209,12 +219,100 @@ function isInCategory(metadata: any, category: Category): boolean {
               href={`/collection/${nftContract.chain.id}/${
                 nftContract.address
               }/token/${item.id.toString()}`}
-              _hover={{ textDecoration: "none" }}
+              _hover={{ 
+                textDecoration: "none",
+                transform: "translateY(-4px)",
+                shadow: "lg"
+              }}
+              transition="all 0.2s ease"
+              bg={cardBg}
+              border="1px solid"
+              borderColor={borderColor}
+              overflow="hidden"
+              position="relative"
             >
-              <Flex direction="column">
-                <MediaRenderer client={client} src={item.metadata.image} />
-                <Text>{item.metadata?.name ?? "Unknown item"}</Text>
-              </Flex>
+              <Box position="relative">
+                <MediaRenderer 
+                  client={client} 
+                  src={item.metadata.image}
+                  style={{
+                    width: "100%",
+                    height: "200px",
+                    objectFit: "cover"
+                  }}
+                />
+                
+                {/* OneChain Badge */}
+                {isOneChain && (
+                  <Badge
+                    position="absolute"
+                    top={2}
+                    right={2}
+                    colorScheme="purple"
+                    variant="solid"
+                    size="sm"
+                    rounded="full"
+                  >
+                    <HStack spacing={1}>
+                      <Icon as={FaLink} boxSize={2} />
+                      <Text fontSize="xs">OneChain</Text>
+                    </HStack>
+                  </Badge>
+                )}
+
+                {/* Compliance Badge */}
+                {item.metadata?.attributes?.some((attr: any) => 
+                  attr.trait_type === "compliance" && attr.value === "verified"
+                ) && (
+                  <Badge
+                    position="absolute"
+                    top={2}
+                    left={2}
+                    colorScheme="green"
+                    variant="solid"
+                    size="sm"
+                    rounded="full"
+                  >
+                    <HStack spacing={1}>
+                      <Icon as={FaCheckCircle} boxSize={2} />
+                      <Text fontSize="xs">Verified</Text>
+                    </HStack>
+                  </Badge>
+                )}
+              </Box>
+              
+              <VStack align="start" p={4} spacing={2}>
+                <Text fontWeight="bold" fontSize="md" noOfLines={1}>
+                  {item.metadata?.name ?? "Unknown item"}
+                </Text>
+                
+                {/* Asset Category */}
+                {item.metadata?.attributes && (
+                  <HStack spacing={2} flexWrap="wrap">
+                    {item.metadata.attributes
+                      .filter((attr: any) => attr.trait_type === "category")
+                      .map((attr: any, index: number) => (
+                        <Badge
+                          key={index}
+                          colorScheme={attr.value === "property" ? "blue" : "green"}
+                          variant="subtle"
+                          size="sm"
+                        >
+                          {attr.value}
+                        </Badge>
+                      ))}
+                  </HStack>
+                )}
+                
+                {/* Network Badge */}
+                <Badge
+                  colorScheme={isOneChain ? "purple" : "gray"}
+                  variant="outline"
+                  size="sm"
+                >
+                  {nftContract.chain.name}
+                </Badge>
+              </VStack>
             </Box>
           ))
         ) : (

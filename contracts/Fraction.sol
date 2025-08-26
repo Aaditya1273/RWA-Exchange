@@ -22,6 +22,6 @@ contract Fraction is ERC20 {
     }
 
     function burn(uint256 amount) public onlyMinter {
-        _burn(msg.sender, amount);
+        _burn(address(this), amount);
     }
 }

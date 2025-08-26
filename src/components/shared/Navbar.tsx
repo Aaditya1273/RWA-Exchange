@@ -14,13 +14,17 @@ import {
   useColorMode,
   HStack,
   Text,
+  Badge,
+  VStack,
+  Divider,
 } from "@chakra-ui/react";
 import { blo } from "blo";
-import { FaRegMoon } from "react-icons/fa";
-import { FiUser } from "react-icons/fi";
+import { FaRegMoon, FaExchangeAlt } from "react-icons/fa";
+import { FiUser, FiAlertTriangle } from "react-icons/fi";
 import { IoSunny } from "react-icons/io5";
 import { SideMenu } from "./SideMenu";
 import { client } from "@/consts/client";
+import { defaultChain, supportedChains } from "@/consts/chains";
 import {
   ConnectButton,
   useActiveAccount,
@@ -28,11 +32,19 @@ import {
   useDisconnect,
 } from "thirdweb/react";
 import { OneChainWalletButton } from "./OneChainWallet";
+import { useChainSwitching } from "@/hooks/useChainSwitching";
 
 export function Navbar() {
   const account = useActiveAccount();
   const wallet = useActiveWallet();
   const { disconnect } = useDisconnect();
+  const {
+    isOnSupportedChain,
+    isOnDefaultChain,
+    switchToDefaultChain,
+    switchToChain,
+    currentChain,
+  } = useChainSwitching();
 
   const handleLogout = async () => {
     if (wallet) {
@@ -78,11 +90,22 @@ export function Navbar() {
           <OneChainWalletButton />
 
           {account ? (
-            <ProfileButton address={account.address} onLogout={handleLogout} />
+            <HStack spacing={2}>
+              <NetworkButton
+                isOnSupportedChain={isOnSupportedChain}
+                isOnDefaultChain={isOnDefaultChain}
+                currentChain={currentChain}
+                switchToDefaultChain={switchToDefaultChain}
+                switchToChain={switchToChain}
+              />
+              <ProfileButton address={account.address} onLogout={handleLogout} />
+            </HStack>
           ) : (
             <ConnectButton
               client={client}
               theme="light"
+              chain={defaultChain}
+              chains={supportedChains}
               connectButton={{
                 label: "Connect Wallet",
                 style: {
@@ -90,6 +113,11 @@ export function Navbar() {
                   minWidth: "120px",
                   fontSize: "14px"
                 }
+              }}
+              connectModal={{
+                title: "Connect to OneChain",
+                titleIcon: "🔗",
+                showThirdwebBranding: false,
               }}
             />
           )}
@@ -122,6 +150,82 @@ function ProfileButton({ address, onLogout }: { address: string; onLogout: () =>
           Profile
         </MenuItem>
         <MenuItem onClick={onLogout}>Logout</MenuItem>
+      </MenuList>
+    </Menu>
+  );
+}
+
+function NetworkButton({
+  isOnSupportedChain,
+  isOnDefaultChain,
+  currentChain,
+  switchToDefaultChain,
+  switchToChain,
+}: {
+  isOnSupportedChain: boolean;
+  isOnDefaultChain: boolean;
+  currentChain: any;
+  switchToDefaultChain: () => Promise<boolean>;
+  switchToChain: (chainId: number) => Promise<boolean>;
+}) {
+  const getNetworkStatus = () => {
+    if (!currentChain) return { color: "gray", label: "No Network" };
+    if (!isOnSupportedChain) return { color: "red", label: "Wrong Network" };
+    if (isOnDefaultChain) return { color: "green", label: currentChain.name };
+    return { color: "yellow", label: currentChain.name };
+  };
+
+  const { color, label } = getNetworkStatus();
+
+  return (
+    <Menu>
+      <MenuButton as={Button} height="40px" px="12px" variant="outline">
+        <HStack spacing={2}>
+          {!isOnSupportedChain && <FiAlertTriangle size={16} />}
+          <Badge colorScheme={color} variant="solid" fontSize="xs">
+            {label}
+          </Badge>
+        </HStack>
+      </MenuButton>
+      <MenuList>
+        <VStack spacing={2} p={2} align="stretch">
+          <Text fontSize="sm" fontWeight="bold" color="gray.600">
+            Switch Network
+          </Text>
+          
+          {!isOnSupportedChain && (
+            <>
+              <Button
+                size="sm"
+                colorScheme="red"
+                variant="outline"
+                leftIcon={<FaExchangeAlt />}
+                onClick={switchToDefaultChain}
+              >
+                Switch to {defaultChain.name}
+              </Button>
+              <Divider />
+            </>
+          )}
+
+          {supportedChains.map((chain) => (
+            <MenuItem
+              key={chain.id}
+              onClick={() => switchToChain(chain.id)}
+              bg={currentChain?.id === chain.id ? "blue.50" : "transparent"}
+              _hover={{ bg: "blue.100" }}
+            >
+              <HStack justify="space-between" width="full">
+                <Text fontSize="sm">{chain.name}</Text>
+                {currentChain?.id === chain.id && (
+                  <Badge colorScheme="green" size="sm">
+                    Active
+                  </Badge>
+                )}
+              </HStack>
+            </MenuItem>
+          ))}
+        </VStack>
       </MenuList>
     </Menu>
   );

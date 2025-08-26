@@ -7,7 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "setup": "node setup.js"
+    "setup": "node setup.js",
+    "compile": "npx hardhat compile --config hardhat.config.js",
+    "test": "hardhat test",
+    "deploy:localhost": "hardhat run scripts/deploy.ts --network localhost",
+    "deploy:onechain-testnet": "hardhat run scripts/deploy.ts --network onechain_testnet",
+    "deploy:onechain-mainnet": "hardhat run scripts/deploy.ts --network onechain_mainnet",
+    "deploy:onechain-simple": "node deploy-onechain.js",
+    "fund-wallet": "node fund-wallet.js",
+    "update-addresses": "node update-addresses.js",
+    "verify:onechain-testnet": "hardhat verify --network onechain_testnet",
+    "verify:onechain-mainnet": "hardhat verify --network onechain_mainnet"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.1.1",
@@ -33,9 +43,8 @@
     "thirdweb": "^5.105.33"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
-    "@nomicfoundation/hardhat-network-helpers": "^3.0.0",
-    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@nomicfoundation/hardhat-ethers": "^3.1.0",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-etherscan": "^3.1.8",
     "@typechain/ethers-v5": "^11.1.2",
@@ -46,8 +55,9 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "chai": "^5.2.1",
+    "dotenv": "^16.4.5",
     "ethers": "^6.15.0",
-    "hardhat": "^3.0.0",
+    "hardhat": "^2.26.3",
     "hardhat-gas-reporter": "^2.3.0",
     "postcss": "^8",
     "solidity-coverage": "^0.8.16",

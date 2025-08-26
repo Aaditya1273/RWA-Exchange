@@ -17,8 +17,15 @@ import {
   Th,
   Thead,
   Tr,
+  Badge,
+  HStack,
+  VStack,
+  Icon,
+  useColorModeValue,
+  Alert,
+  AlertIcon,
 } from "@chakra-ui/react";
-import { FaExternalLinkAlt } from "react-icons/fa";
+import { FaExternalLinkAlt, FaLink, FaNetworkWired, FaCheckCircle } from "react-icons/fa";
 import { balanceOf, getNFT as getERC1155 } from "thirdweb/extensions/erc1155";
 import { getNFT as getERC721 } from "thirdweb/extensions/erc721";
 import {
@@ -31,9 +38,11 @@ import { NftAttributes } from "./NftAttributes";
 import { ComplianceBadge } from "@/components/shared/ComplianceBadge";
 import { CreateListing } from "./CreateListing";
 import { useMarketplaceContext } from "@/hooks/useMarketplaceContext";
+import { useChainSwitching } from "@/hooks/useChainSwitching";
 import dynamic from "next/dynamic";
 import { NftDetails } from "./NftDetails";
 import RelatedListings from "./RelatedListings";
+import { OneChainFeatures } from "./OneChainFeatures";
 
 const CancelListingButton = dynamic(() => import("./CancelListingButton"), {
   ssr: false,
@@ -58,6 +67,10 @@ export function Token(props: Props) {
   } = useMarketplaceContext();
   const { tokenId } = props;
   const account = useActiveAccount();
+  const { isOnSupportedChain, switchToDefaultChain, currentChain } = useChainSwitching();
+  
+  const isOneChain = nftContract.chain.id === 1001 || nftContract.chain.id === 1000;
+  const cardBg = useColorModeValue("white", "gray.800");
 
   const { data: nft, isLoading: isLoadingNFT } = useReadContract(
     type === "ERC1155" ? getERC1155 : getERC721,
@@ -110,6 +123,33 @@ export function Token(props: Props) {
 
   return (
     <Flex direction="column">
+      {/* Network Status Alert */}
+      {!isOnSupportedChain && (
+        <Alert status="warning" mb={6} rounded="lg" mx="auto" maxW="7xl">
+          <AlertIcon />
+          <VStack align="start" spacing={1} flex={1}>
+            <Text fontWeight="bold">
+              Wrong Network: {currentChain?.name}
+            </Text>
+            <Text fontSize="sm">
+              Switch to OneChain to interact with this asset.
+            </Text>
+          </VStack>
+          <Box ml="auto">
+            <Badge
+              colorScheme="orange"
+              cursor="pointer"
+              onClick={switchToDefaultChain}
+              _hover={{ bg: "orange.600" }}
+              px={3}
+              py={1}
+            >
+              Switch Network
+            </Badge>
+          </Box>
+        </Alert>
+      )}
+
       <Box mt="24px" mx="auto">
         <Flex
           direction={{ lg: "row", base: "column" }}
@@ -117,11 +157,63 @@ export function Token(props: Props) {
           gap={{ lg: 20, base: 5 }}
         >
           <Flex direction="column" w={{ lg: "45vw", base: "90vw" }} gap="5">
-            <MediaRenderer
-              client={client}
-              src={nft?.metadata.image}
-              style={{ width: "max-content", height: "auto", aspectRatio: "1" }}
-            />
+            <Box position="relative">
+              <MediaRenderer
+                client={client}
+                src={nft?.metadata.image}
+                style={{ width: "max-content", height: "auto", aspectRatio: "1" }}
+              />
+              
+              {/* Network and Status Badges */}
+              <VStack position="absolute" top={4} right={4} spacing={2}>
+                {isOneChain && (
+                  <Badge
+                    colorScheme="purple"
+                    variant="solid"
+                    px={3}
+                    py={1}
+                    rounded="full"
+                    fontWeight="600"
+                  >
+                    <HStack spacing={1}>
+                      <Icon as={FaLink} boxSize={3} />
+                      <Text fontSize="xs">OneChain</Text>
+                    </HStack>
+                  </Badge>
+                )}
+                
+                {/* Compliance Badge */}
+                {nft?.metadata?.attributes && Array.isArray(nft.metadata.attributes) && 
+                 nft.metadata.attributes.some((attr: any) => 
+                   attr.trait_type === "compliance" && attr.value === "verified"
+                 ) && (
+                  <Badge
+                    colorScheme="green"
+                    variant="solid"
+                    px={3}
+                    py={1}
+                    rounded="full"
+                    fontWeight="600"
+                  >
+                    <HStack spacing={1}>
+                      <Icon as={FaCheckCircle} boxSize={3} />
+                      <Text fontSize="xs">Verified</Text>
+                    </HStack>
+                  </Badge>
+                )}
+                
+                <Badge
+                  colorScheme={isOneChain ? "purple" : "gray"}
+                  variant="outline"
+                  px={3}
+                  py={1}
+                  rounded="full"
+                  bg={cardBg}
+                >
+                  {nftContract.chain.name}
+                </Badge>
+              </VStack>
+            </Box>
             <Accordion allowMultiple defaultIndex={[0, 1, 2]}>
               {nft?.metadata.description && (
                 <AccordionItem>
@@ -190,6 +282,17 @@ export function Token(props: Props) {
               (ownedByYou || (ownedQuantity1155 && ownedQuantity1155 > 0n)) && (
                 <CreateListing tokenId={nft?.id} account={account} />
               )}
+            
+            {/* OneChain RWA Features */}
+            {nft && (
+              <Box mt={6}>
+                <OneChainFeatures 
+                  chainId={nftContract.chain.id}
+                  tokenId={nft.id}
+                  isOwner={ownedByYou || (ownedQuantity1155 && ownedQuantity1155 > 0n)}
+                />
+              </Box>
+            )}
             <Accordion
               mt="30px"
               sx={{ container: {} }}

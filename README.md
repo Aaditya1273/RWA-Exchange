@@ -5,6 +5,8 @@
   
   <p><strong>A decentralized marketplace for tokenized Real-World Assets (RWA) with NFT fractionalization capabilities.</strong></p>
   
+  <p><strong>🚀 This hackathon demo runs fully on OneChain - the next-generation blockchain for real-world asset tokenization.</strong></p>
+  
   <p>
     <a href="https://nextjs.org/" target="_blank"><img src="https://img.shields.io/badge/Next.js-14-black?logo=next.js" alt="Next.js" /></a>
     <a href="https://www.typescriptlang.org/" target="_blank"><img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
@@ -92,14 +94,108 @@ This project includes three core smart contracts for RWA tokenization and fracti
 - Minted by the Fractionalizer contract
 - Burnable tokens for NFT redemption process
 
+## 🔗 OneChain Integration Benefits
+
+### **Why OneChain for RWA?**
+- **Optimized for Real-World Assets**: Purpose-built blockchain for tokenizing physical assets
+- **Low Transaction Costs**: Minimal fees for fractionalization and trading operations
+- **Fast Settlement**: Quick confirmation times for asset transactions
+- **Regulatory Compliance**: Built-in compliance features for asset tokenization
+- **Interoperability**: Seamless integration with traditional financial systems
+
+### **OneChain-Specific Features**
+- **🏠 Property Tokenization**: Direct integration with real estate verification systems
+- **🌱 Carbon Credit Trading**: Native support for environmental asset tokenization
+- **⚡ Instant Fractionalization**: Split assets into tradeable fractions in seconds
+- **🔄 Seamless Redemption**: Collect fractions to redeem complete asset ownership
+- **📊 Real-time Analytics**: Live tracking of asset performance and trading volume
+- **🛡️ Compliance Badges**: Automated verification and compliance checking
+
 ## Tech Stack
 
+- **Blockchain**: OneChain Network (Primary), Multi-chain support
 - **Frontend**: Next.js 14, React 18, TypeScript, Chakra UI
-- **Web3 SDK**: thirdweb v5
+- **Web3 SDK**: thirdweb v5 with OneChain integration
 - **Smart Contracts**: Solidity 0.8.24, OpenZeppelin v5.4.0, Hardhat v3
+- **RWA Contracts**: PropertyNFT, Fractionalizer, Fraction ERC20
 - **State Management**: @tanstack/react-query
 - **Styling**: Framer Motion, Chakra UI with custom themes
 
+## Supported Networks
+
+### Primary Network
+- **OneChain Testnet** (Chain ID: 1001) - Default active network
+- **OneChain Mainnet** (Chain ID: 1000) - Production network
+
+### Legacy Networks (Secondary Support)
+- Avalanche Fuji Testnet (Chain ID: 43113)
+- Polygon Amoy Testnet (Chain ID: 80002)  
+- Sepolia Testnet (Chain ID: 11155111)
+
+## OneChain Contract Addresses
+
+### Testnet (Chain ID: 1001)
+```
+PropertyNFT:    0x0000000000000000000000000000000000000000  # Update after deployment
+Fractionalizer: 0x0000000000000000000000000000000000000000  # Update after deployment
+Marketplace:    0x0000000000000000000000000000000000000000  # Update after deployment
+```
+
+### Mainnet (Chain ID: 1000)
+```
+PropertyNFT:    0x0000000000000000000000000000000000000000  # Update after deployment
+Fractionalizer: 0x0000000000000000000000000000000000000000  # Update after deployment
+Marketplace:    0x0000000000000000000000000000000000000000  # Update after deployment
+```
+
+> **Note**: Replace the placeholder addresses (0x000...) with actual deployed contract addresses after running the deployment scripts.
+
+
+## OneChain Integration Flow
+
+```mermaid
+flowchart TD
+  subgraph OneChain[OneChain RWA Ecosystem]
+    A[Real-World Asset] --> B[Property NFT Minting]
+    B --> C[Asset Verification & Compliance]
+    C --> D[OneChain Marketplace Listing]
+    D --> E{Investment Options}
+    
+    E --> F[Direct Purchase]
+    E --> G[Fractionalization]
+    
+    G --> H[ERC20 Fraction Tokens]
+    H --> I[Secondary Trading]
+    I --> J[Liquidity Pool]
+    
+    F --> K[Full Asset Ownership]
+    J --> L{Collect All Fractions?}
+    L -- Yes --> M[Asset Redemption]
+    L -- No --> N[Continue Trading]
+    
+    M --> K
+    N --> I
+    
+    K --> O[Asset Management]
+    O --> P[Yield Generation]
+    P --> Q[Profit Distribution]
+  end
+
+  subgraph Tech[Technical Implementation]
+    R[PropertyNFT.sol] --> S[Fractionalizer.sol]
+    S --> T[Fraction.sol ERC20]
+    T --> U[Marketplace V3]
+    U --> V[OneChain Network]
+  end
+
+  subgraph User[User Journey]
+    W[Connect Wallet] --> X[Browse RWA Assets]
+    X --> Y[Select Investment Amount]
+    Y --> Z[Purchase Fractions]
+    Z --> AA[Track Portfolio]
+    AA --> BB[Trade or Redeem]
+  end
+```
 
 ## Dev + User Flow
 
@@ -108,28 +204,38 @@ flowchart TD
   subgraph Dev[Developer Workflow]
     A[Clone Repo] --> B[Install Deps]
     B --> C[Create .env.local\nNEXT_PUBLIC_TW_CLIENT_ID]
-    C --> D{Contracts needed?}
-    D -- Yes --> E[Hardhat Compile/Test]
-    E --> F[Deploy via scripts/deploy.ts]
-    D -- No --> G[Skip]
-    F --> H[Update src/consts/*]
-    G --> H
-    H --> I[Run: npm run dev]
+    C --> D{Deploy to OneChain?}
+    D -- Yes --> E[Configure OneChain RPC]
+    E --> F[Deploy RWA Contracts]
+    F --> G[Deploy Marketplace]
+    D -- No --> H[Use Testnet]
+    G --> I[Update Contract Addresses]
+    H --> I
+    I --> J[Run: npm run dev]
   end
 
-  subgraph User[End-User Flow]
-    J[Open App / Landing] --> K[Connect OneWallet in Navbar]
-    K --> L{Connected?}
-    L -- Yes --> M[Browse Marketplace]
-    L -- No --> K
-    M --> N[View Token Page]
-    N --> O{Buy / List / Fractionalize}
-    O -- Buy --> P[Purchase via supported token]
-    O -- List --> Q[Create Listing]
-    O -- Fractionalize --> R[Fractionalize Asset]
+  subgraph User[End-User Flow on OneChain]
+    K[Open App / Landing] --> L[Connect Wallet to OneChain]
+    L --> M{Connected to OneChain?}
+    M -- Yes --> N[Browse RWA Marketplace]
+    M -- No --> O[Switch to OneChain Network]
+    O --> N
+    N --> P[View Property/Asset Details]
+    P --> Q{Investment Action}
+    Q -- Buy Fractions --> R[Purchase ERC20 Tokens]
+    Q -- Buy Full Asset --> S[Purchase Complete NFT]
+    Q -- List Asset --> T[Create Marketplace Listing]
+    Q -- Fractionalize --> U[Split into ERC20 Tokens]
+    
+    R --> V[Track Fractional Ownership]
+    S --> W[Full Asset Management]
+    U --> X[Enable Secondary Trading]
+    V --> Y{Collect All Fractions?}
+    Y -- Yes --> Z[Redeem Full Asset]
+    Y -- No --> AA[Continue Trading]
   end
 
-  I --> J
+  J --> K
 ```
 
 ## Getting Started
@@ -152,7 +258,28 @@ NEXT_PUBLIC_THIRDWEB_CLIENT_ID="your_thirdweb_client_id_here"
 
 You can get a client ID from the [thirdweb dashboard](https://thirdweb.com/dashboard/settings/api-keys).
 
-### 3. Run the Development Server
+### 3. Configure OneChain Network
+Add OneChain network configuration to your `.env.local`:
+```bash
+# OneChain Configuration
+NEXT_PUBLIC_ONECHAIN_NETWORK=testnet
+NEXT_PUBLIC_ONECHAIN_TESTNET_RPC_URL=https://testnet-rpc.onechain.network
+NEXT_PUBLIC_ONECHAIN_MAINNET_RPC_URL=https://rpc.onechain.network
+NEXT_PUBLIC_ONECHAIN_TESTNET_EXPLORER=https://testnet-explorer.onechain.network
+NEXT_PUBLIC_ONECHAIN_MAINNET_EXPLORER=https://explorer.onechain.network
+```
+
+### 4. Deploy Smart Contracts to OneChain (Optional)
+If you want to deploy your own contracts:
+```bash
+# Deploy to OneChain testnet
+npm run deploy:onechain-testnet
+
+# Deploy to OneChain mainnet
+npm run deploy:onechain-mainnet
+```
+
+### 5. Run the Development Server
 ```bash
 npm run dev
 ```
@@ -271,10 +398,18 @@ You can obtain a client ID from the [thirdweb dashboard](https://thirdweb.com/da
 ### Common Issues
 
 #### Wallet Connection Issues
+- **OneChain Network**: Ensure your wallet is configured for OneChain network (Chain ID: 1001 for testnet, 1000 for mainnet)
+- **Auto Network Switch**: The app will prompt you to switch to OneChain automatically
 - **Desktop**: Ensure you have MetaMask, Coinbase Wallet, or another supported wallet extension installed
 - **Mobile**: Use WalletConnect or the built-in browser of your mobile wallet
 - **Connection Fails**: Try refreshing the page and reconnecting
-- **Wrong Network**: The app supports Avalanche Fuji, Polygon Amoy, and Sepolia testnets
+- **Wrong Network**: The app prioritizes OneChain but supports legacy testnets as fallback
+
+#### OneChain-Specific Issues
+- **RPC Connection**: If OneChain RPC is slow, check your network configuration
+- **Contract Interactions**: Ensure you have sufficient ONE tokens for gas fees
+- **Fractionalization Fails**: Verify you own the NFT and have approved the Fractionalizer contract
+- **Asset Not Loading**: Check if the asset exists on the correct OneChain network (testnet vs mainnet)
 
 #### Build/Runtime Errors
 - **Module not found errors**: Run `npm install` to ensure all dependencies are installed
@@ -284,8 +419,9 @@ You can obtain a client ID from the [thirdweb dashboard](https://thirdweb.com/da
 
 #### Performance Issues
 - **Slow loading**: The app fetches real NFT metadata which may take time
-- **Network timeouts**: Switch to a different RPC endpoint if needed
-- **High gas fees**: Use testnets for development (Fuji, Amoy, Sepolia)
+- **Network timeouts**: Switch to a different OneChain RPC endpoint if needed
+- **Low gas fees**: OneChain offers significantly lower fees compared to Ethereum mainnet
+- **Development**: Use OneChain testnet for development and testing
 
 ### Getting Help
 - Check the [thirdweb documentation](https://portal.thirdweb.com/)

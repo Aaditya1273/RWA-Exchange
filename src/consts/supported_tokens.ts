@@ -1,5 +1,5 @@
 import type { Chain } from "thirdweb";
-import { avalancheFuji, polygonAmoy, sepolia } from "./chains";
+import { onechainTestnet, onechainMainnet, avalancheFuji, polygonAmoy, sepolia } from "./chains";
 
 export type Token = {
   tokenAddress: string;
@@ -21,6 +21,49 @@ export type SupportedTokens = {
  * By default the Marketplace V3 contract supports any asset (token)
  */
 export const SUPPORTED_TOKENS: SupportedTokens[] = [
+  // OneChain Networks (Primary)
+  {
+    chain: onechainTestnet,
+    tokens: [
+      {
+        tokenAddress: "0x0000000000000000000000000000000000000000", // Replace with actual USDC on OneChain
+        symbol: "USDC",
+        icon: "/erc20-icons/usdc.png",
+      },
+      {
+        tokenAddress: "0x0000000000000000000000000000000000000000", // Replace with actual USDT on OneChain
+        symbol: "USDT", 
+        icon: "/erc20-icons/usdt.png",
+      },
+      {
+        tokenAddress: "0x0000000000000000000000000000000000000000", // Replace with actual Fraction token address
+        symbol: "FRAC",
+        icon: "/erc20-icons/fraction.png",
+      },
+    ],
+  },
+  {
+    chain: onechainMainnet,
+    tokens: [
+      {
+        tokenAddress: "0x0000000000000000000000000000000000000000", // Replace with actual USDC on OneChain mainnet
+        symbol: "USDC",
+        icon: "/erc20-icons/usdc.png",
+      },
+      {
+        tokenAddress: "0x0000000000000000000000000000000000000000", // Replace with actual USDT on OneChain mainnet
+        symbol: "USDT",
+        icon: "/erc20-icons/usdt.png",
+      },
+      {
+        tokenAddress: "0x0000000000000000000000000000000000000000", // Replace with actual Fraction token address
+        symbol: "FRAC",
+        icon: "/erc20-icons/fraction.png",
+      },
+    ],
+  },
+
+  // Legacy Networks (Secondary support)
   {
     chain: avalancheFuji,
     tokens: [
@@ -73,6 +116,8 @@ export const SUPPORTED_TOKENS: SupportedTokens[] = [
 
 export const NATIVE_TOKEN_ICON_MAP: { [key in Chain["id"]]: string } = {
   1: "/native-token-icons/eth.png",
+  [onechainTestnet.id]: "/native-token-icons/one.png", // OneChain testnet
+  [onechainMainnet.id]: "/native-token-icons/one.png", // OneChain mainnet
   [sepolia.id]: "/native-token-icons/eth.png",
   [avalancheFuji.id]: "/native-token-icons/avax.png",
   [polygonAmoy.id]: "/native-token-icons/matic.png",

@@ -28,10 +28,11 @@ const nextConfig = {
 
     return config;
   },
-  // Suppress warnings for optional dependencies
   experimental: {
-    esmExternals: 'loose',
+    esmExternals: true,
   },
+  // Disable telemetry to avoid network calls
+  telemetry: false,
 };
 
 module.exports = nextConfig;

@@ -1,0 +1,13 @@
+{
+  "network": "onechain_testnet",
+  "deployer": "0x9883B6fC8A4e078278BF96A939BE1CCF4c67B0d4",
+  "timestamp": "2025-08-26T15:51:37.021Z",
+  "status": "failed",
+  "error": "server response 403 Forbidden (request={  }, response={  }, error=null, info={ \"requestUrl\": \"https://rpc.ankr.com/onechain_testnet\", \"responseBody\": \"{\\\"error\\\":\\\"message: API key is not allowed to access blockchain, json-rpc code: -32052, rest code: 403\\\"}\", \"responseStatus\": \"403 Forbidden\" }, code=SERVER_ERROR, version=6.15.0)",
+  "troubleshooting": [
+    "Check if you have enough ONE tokens for gas",
+    "Verify RPC URL is accessible",
+    "Ensure contracts are compiled: npx hardhat compile",
+    "Check private key format in .env file"
+  ]
+}

@@ -4,6 +4,7 @@ import { ChakraProvider, ColorModeScript } from "@chakra-ui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThirdwebProvider } from "thirdweb/react";
 import { client } from "@/consts/client";
+import { defaultChain } from "@/consts/chains";
 import type { ReactNode } from "react";
 
 const queryClient = new QueryClient();

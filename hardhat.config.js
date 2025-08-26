@@ -1,11 +1,9 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
-import "@nomiclabs/hardhat-etherscan";
-import * as dotenv from "dotenv";
+require("@nomicfoundation/hardhat-toolbox");
+require("@nomiclabs/hardhat-etherscan");
+require("dotenv").config();
 
-dotenv.config();
-
-const config: HardhatUserConfig = {
+/** @type import('hardhat/config').HardhatUserConfig */
+module.exports = {
   solidity: {
     version: "0.8.24",
     settings: {
@@ -23,16 +21,16 @@ const config: HardhatUserConfig = {
       url: "http://127.0.0.1:8545",
       chainId: 31337,
     },
-    // OneChain Testnet
+    // OneChain Testnet - Official RPC from documentation
     onechain_testnet: {
-      url: process.env.ONECHAIN_TESTNET_RPC_URL || "https://testnet-rpc.onechain.network",
+      url: process.env.ONECHAIN_TESTNET_RPC_URL || "https://rpc-testnet.onelabs.cc:443",
       chainId: 1001,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       timeout: 60000,
     },
-    // OneChain Mainnet
+    // OneChain Mainnet - Official RPC from documentation
     onechain_mainnet: {
-      url: process.env.ONECHAIN_MAINNET_RPC_URL || "https://rpc.onechain.network",
+      url: process.env.ONECHAIN_MAINNET_RPC_URL || "https://rpc.mainnet.onelabs.cc:443",
       chainId: 1000,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       timeout: 60000,
@@ -73,5 +71,3 @@ const config: HardhatUserConfig = {
     currency: "USD",
   },
 };
-
-export default config;

@@ -14,10 +14,16 @@ import {
   StatArrow,
   Progress,
   useColorModeValue,
+  Badge,
+  HStack,
+  VStack,
+  Icon,
 } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
+import { FaLink, FaNetworkWired } from "react-icons/fa";
 import { client } from "@/consts/client";
-import { NFT_CONTRACTS, type NftContract } from "@/consts/nft_contracts";
+import { NFT_CONTRACTS, type NftContract, getDefaultNftContract, getOneChainContracts } from "@/consts/nft_contracts";
+import { useChainSwitching } from "@/hooks/useChainSwitching";
 import { getContract } from "thirdweb";
 import { getOwnedERC1155s } from "@/extensions/getOwnedERC1155s";
 import { getOwnedERC721s } from "@/extensions/getOwnedERC721s";
@@ -83,8 +89,9 @@ function isInCategory(metadata: any, category: "property" | "carbon"): boolean {
 
 export default function Dashboard() {
   const account = useActiveAccount();
+  const { isOnSupportedChain, switchToDefaultChain, currentChain } = useChainSwitching();
   const [selectedCollection, setSelectedCollection] = useState<NftContract>(
-    NFT_CONTRACTS[0]
+    getDefaultNftContract()
   );
   const contract = useMemo(
     () =>
@@ -121,24 +128,94 @@ export default function Dashboard() {
     return [10, 11, 9, 12, 13, 12, 14, 13, 15, 16];
   }, []);
 
+  const oneChainContracts = getOneChainContracts();
+  const isOneChainSelected = selectedCollection.chain.id === 1001 || selectedCollection.chain.id === 1000;
+
   return (
     <Box px={{ lg: "50px", base: "20px" }}>
-      <Flex direction={{ lg: "row", base: "column" }} justify="space-between" gap={4}>
-        <Heading>Investor Dashboard</Heading>
-        <Select
-          maxW="320px"
-          value={selectedCollection.address}
-          onChange={(e) => {
-            const next = NFT_CONTRACTS.find((c) => c.address === e.target.value);
-            if (next) setSelectedCollection(next);
-          }}
+      {/* Network Status Banner */}
+      {!isOnSupportedChain && (
+        <Box
+          bg="red.50"
+          border="1px solid"
+          borderColor="red.200"
+          rounded="lg"
+          p={4}
+          mb={6}
         >
-          {NFT_CONTRACTS.map((c) => (
-            <option key={c.address} value={c.address}>
-              {(c.title ?? c.slug ?? c.address.slice(0, 8))} ({c.chain.name})
-            </option>
-          ))}
-        </Select>
+          <HStack spacing={3}>
+            <Icon as={FaNetworkWired} color="red.500" />
+            <VStack align="start" spacing={1}>
+              <Text fontWeight="bold" color="red.700">
+                Wrong Network Detected
+              </Text>
+              <Text fontSize="sm" color="red.600">
+                You're connected to {currentChain?.name}. Switch to OneChain for the best experience.
+              </Text>
+            </VStack>
+            <Box ml="auto">
+              <Badge
+                colorScheme="red"
+                cursor="pointer"
+                onClick={switchToDefaultChain}
+                _hover={{ bg: "red.600" }}
+              >
+                Switch Network
+              </Badge>
+            </Box>
+          </HStack>
+        </Box>
+      )}
+
+      <Flex direction={{ lg: "row", base: "column" }} justify="space-between" gap={4}>
+        <VStack align="start" spacing={2}>
+          <HStack>
+            <Heading>Investor Dashboard</Heading>
+            {isOneChainSelected && (
+              <Badge colorScheme="purple" variant="solid" px={3} py={1} rounded="full">
+                <HStack spacing={1}>
+                  <Icon as={FaLink} boxSize={3} />
+                  <Text fontSize="xs">OneChain</Text>
+                </HStack>
+              </Badge>
+            )}
+          </HStack>
+          <Text color="gray.600" fontSize="sm">
+            {isOneChainSelected 
+              ? "Viewing assets on OneChain - the primary RWA network" 
+              : "Switch to OneChain for full RWA functionality"
+            }
+          </Text>
+        </VStack>
+        
+        <VStack align="end" spacing={2}>
+          <Select
+            maxW="320px"
+            value={selectedCollection.address}
+            onChange={(e) => {
+              const next = NFT_CONTRACTS.find((c) => c.address === e.target.value);
+              if (next) setSelectedCollection(next);
+            }}
+          >
+            <optgroup label="OneChain Networks (Recommended)">
+              {oneChainContracts.map((c) => (
+                <option key={c.address} value={c.address}>
+                  🔗 {(c.title ?? c.slug ?? c.address.slice(0, 8))} ({c.chain.name})
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Legacy Networks">
+              {NFT_CONTRACTS.filter(c => c.chain.id !== 1001 && c.chain.id !== 1000).map((c) => (
+                <option key={c.address} value={c.address}>
+                  {(c.title ?? c.slug ?? c.address.slice(0, 8))} ({c.chain.name})
+                </option>
+              ))}
+            </optgroup>
+          </Select>
+          <Text fontSize="xs" color="gray.500">
+            {selectedCollection.chain.name} • {selectedCollection.type}
+          </Text>
+        </VStack>
       </Flex>
 
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4} mt={6}>

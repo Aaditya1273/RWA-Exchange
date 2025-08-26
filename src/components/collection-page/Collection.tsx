@@ -24,14 +24,17 @@ import {
   useColorModeValue,
   Icon,
   Button,
-  keyframes
+  keyframes,
+  Alert,
+  AlertIcon,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useMarketplaceContext } from "@/hooks/useMarketplaceContext";
+import { useChainSwitching } from "@/hooks/useChainSwitching";
 import { ListingGrid } from "./ListingGrid";
 import { AllNftsGrid } from "./AllNftsGrid";
 import { SecondaryTrading } from "./SecondaryTrading";
-import { FaChartLine, FaUsers, FaCoins } from "react-icons/fa";
+import { FaChartLine, FaUsers, FaCoins, FaLink, FaNetworkWired } from "react-icons/fa";
 import { motion } from "framer-motion";
 
 const MotionBox = motion(Box);
@@ -60,9 +63,13 @@ export function Collection() {
     listingsInSelectedCollection,
     supplyInfo,
   } = useMarketplaceContext();
+  
+  const { isOnSupportedChain, switchToDefaultChain, currentChain } = useChainSwitching();
 
   const cardBg = useColorModeValue("white", "gray.800");
   const textColor = useColorModeValue("gray.600", "gray.300");
+  
+  const isOneChain = nftContract.chain.id === 1001 || nftContract.chain.id === 1000;
 
   // In case the collection doesn't have a thumbnail, we use the image of the first NFT
   const { data: firstNFT, isLoading: isLoadingFirstNFT } = useReadContract(
@@ -81,6 +88,48 @@ export function Collection() {
 
   return (
     <Container maxW="7xl" py={8}>
+      {/* Network Status Alert */}
+      {!isOnSupportedChain && (
+        <Alert status="warning" mb={6} rounded="lg">
+          <AlertIcon />
+          <VStack align="start" spacing={1} flex={1}>
+            <Text fontWeight="bold">
+              Wrong Network: {currentChain?.name}
+            </Text>
+            <Text fontSize="sm">
+              Switch to OneChain for full RWA marketplace functionality.
+            </Text>
+          </VStack>
+          <Button size="sm" colorScheme="orange" onClick={switchToDefaultChain}>
+            Switch to OneChain
+          </Button>
+        </Alert>
+      )}
+
+      {/* OneChain Promotion Banner */}
+      {!isOneChain && isOnSupportedChain && (
+        <Box
+          bg="purple.50"
+          border="1px solid"
+          borderColor="purple.200"
+          rounded="lg"
+          p={4}
+          mb={6}
+        >
+          <HStack spacing={3}>
+            <Icon as={FaLink} color="purple.500" />
+            <VStack align="start" spacing={1} flex={1}>
+              <Text fontWeight="bold" color="purple.700">
+                Experience OneChain RWA
+              </Text>
+              <Text fontSize="sm" color="purple.600">
+                This collection is on {nftContract.chain.name}. For the latest RWA features, explore OneChain assets.
+              </Text>
+            </VStack>
+          </HStack>
+        </Box>
+      )}
+
       {/* Hero Section */}
       <MotionBox
         initial={{ opacity: 0, y: 30 }}
@@ -104,20 +153,35 @@ export function Collection() {
                 boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
               }}
             />
-            <Badge
-              position="absolute"
-              top={4}
-              right={4}
-              colorScheme="purple"
-              variant="solid"
-              px={3}
-              py={1}
-              rounded="full"
-              fontFamily="Outfit"
-              fontWeight="600"
-            >
-              {type}
-            </Badge>
+            <VStack position="absolute" top={4} right={4} spacing={2}>
+              {isOneChain && (
+                <Badge
+                  colorScheme="purple"
+                  variant="solid"
+                  px={3}
+                  py={1}
+                  rounded="full"
+                  fontFamily="Outfit"
+                  fontWeight="600"
+                >
+                  <HStack spacing={1}>
+                    <Icon as={FaLink} boxSize={3} />
+                    <Text fontSize="xs">OneChain</Text>
+                  </HStack>
+                </Badge>
+              )}
+              <Badge
+                colorScheme={isOneChain ? "green" : "gray"}
+                variant="solid"
+                px={3}
+                py={1}
+                rounded="full"
+                fontFamily="Outfit"
+                fontWeight="600"
+              >
+                {type}
+              </Badge>
+            </VStack>
           </Box>
 
           <VStack spacing={4} textAlign="center">
