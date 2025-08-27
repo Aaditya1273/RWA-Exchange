@@ -115,7 +115,7 @@ function isInCategory(metadata: any, category: Category): boolean {
         enabled: pages.length > 0,
       },
     }
-  );
+  ) as { data: NFTMetadata[] | undefined };
   // Demo NFTs for when no real NFTs are available
   const demoNFTs = [
     {
@@ -198,7 +198,7 @@ function isInCategory(metadata: any, category: Category): boolean {
     }
   ];
 
-  const nftsToShow = allNFTs && allNFTs.length > 0 ? allNFTs : demoNFTs;
+  const nftsToShow = Array.isArray(allNFTs) && allNFTs.length > 0 ? allNFTs : demoNFTs;
   const filtered = nftsToShow.filter((nft: NFTMetadata) =>
     isInCategory(nft?.metadata, category)
   );
