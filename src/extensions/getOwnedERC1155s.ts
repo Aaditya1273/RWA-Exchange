@@ -81,13 +81,13 @@ export async function getOwnedERC1155s(
   });
 
   let ownedBalances = balances
-    .map((b, i) => {
+    .map((b: any, i: number) => {
       return {
         tokenId: i,
         balance: b,
       };
     })
-    .filter((b) => b.balance > 0);
+    .filter((b: any) => b.balance > 0);
 
   if (options.start || options.count) {
     const start = options?.start || 0;
@@ -96,7 +96,7 @@ export async function getOwnedERC1155s(
   }
 
   const nfts = await Promise.all(
-    ownedBalances.map((ob) =>
+    ownedBalances.map((ob: any) =>
       getNFT({ ...options, tokenId: BigInt(ob.tokenId) })
     )
   );

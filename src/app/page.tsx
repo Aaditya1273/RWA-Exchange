@@ -19,10 +19,10 @@ import {
   Stat,
   StatLabel,
   StatNumber,
-  keyframes,
   Card,
   CardBody,
 } from "@chakra-ui/react";
+import { keyframes } from "@emotion/react";
 import { FaArrowRight, FaChartLine, FaGlobe, FaShieldAlt, FaStar, FaArrowUp } from "react-icons/fa";
 import { motion } from "framer-motion";
 

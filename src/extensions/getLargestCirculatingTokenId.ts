@@ -50,7 +50,7 @@ export async function getSupplyInfo(
       // otherwise use nextTokenIdToMint
       else if (_next.status === "fulfilled") {
         // because we always default the startTokenId to 0 we can safely just always subtract here
-        maxSupply_ = _next.value - startTokenId__;
+        maxSupply_ = BigInt(_next.value) - BigInt(startTokenId__);
       } else {
         throw new Error(
           "Contract requires either `nextTokenIdToMint` or `totalSupply` function available to determine the next token ID to mint"

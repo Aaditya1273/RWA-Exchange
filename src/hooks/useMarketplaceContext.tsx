@@ -135,7 +135,7 @@ export default function MarketplaceProvider({
 
   const listingsInSelectedCollection = allValidListings?.length
     ? allValidListings.filter(
-        (item) =>
+        (item: any) =>
           item.assetContractAddress.toLowerCase() ===
           contract.address.toLowerCase()
       )

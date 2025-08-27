@@ -25,7 +25,8 @@ import { getContract, toEther } from "thirdweb";
 import { client } from "@/consts/client";
 import { getOwnedERC721s } from "@/extensions/getOwnedERC721s";
 import { OwnedItem } from "./OwnedItem";
-import { getAllValidListings } from "thirdweb/extensions/marketplace";
+import { getAllValidListings, type ListingItem } from "thirdweb/extensions/marketplace";
+import type { NFTItem } from "thirdweb/extensions/erc721";
 import { MARKETPLACE_CONTRACTS } from "@/consts/marketplace_contract";
 import { Link } from "@chakra-ui/next-js";
 import { getOwnedERC1155s } from "@/extensions/getOwnedERC1155s";
@@ -86,7 +87,7 @@ export function ProfileSection(props: Props) {
     });
   const listings = allValidListings?.length
     ? allValidListings.filter(
-        (item) =>
+        (item: ListingItem) =>
           item.assetContractAddress.toLowerCase() ===
             contract.address.toLowerCase() &&
           item.creatorAddress.toLowerCase() === address.toLowerCase()
@@ -144,7 +145,7 @@ export function ProfileSection(props: Props) {
                   <>
                     {data && data.length > 0 ? (
                       <>
-                        {data?.map((item) => (
+                        {data?.map((item: NFTItem) => (
                           <OwnedItem
                             key={item.id.toString()}
                             nftCollection={contract}
@@ -170,7 +171,7 @@ export function ProfileSection(props: Props) {
                   <>
                     {listings && listings.length > 0 ? (
                       <>
-                        {listings?.map((item) => (
+                        {listings?.map((item: ListingItem) => (
                           <Box
                             key={item.id}
                             rounded="12px"

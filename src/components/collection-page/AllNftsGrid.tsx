@@ -30,6 +30,11 @@ import { MediaRenderer, useReadContract } from "thirdweb/react";
 
 type Category = "all" | "property" | "carbon";
 
+interface NFTMetadata {
+  metadata?: any;
+  [key: string]: any;
+}
+
 export function AllNftsGrid({ category = "all" }: { category?: Category }) {
   const [itemsPerPage, setItemsPerPage] = useState<number>(20);
   const [currentPageIndex, setCurrentPageIndex] = useState<number>(0);
@@ -194,7 +199,7 @@ function isInCategory(metadata: any, category: Category): boolean {
   ];
 
   const nftsToShow = allNFTs && allNFTs.length > 0 ? allNFTs : demoNFTs;
-  const filtered = nftsToShow.filter((nft) =>
+  const filtered = nftsToShow.filter((nft: NFTMetadata) =>
     isInCategory(nft?.metadata, category)
   );
   const len = filtered.length;
@@ -211,7 +216,7 @@ function isInCategory(metadata: any, category: Category): boolean {
     <>
       <SimpleGrid columns={columns} spacing={4} p={4} mx="auto" mt="20px">
         {filtered && filtered.length > 0 ? (
-          filtered.map((item) => (
+          filtered.map((item: NFTMetadata) => (
             <Box
               key={item.id}
               rounded="12px"

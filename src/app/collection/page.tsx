@@ -22,8 +22,8 @@ import {
   InputLeftElement,
   Card,
   CardBody,
-  keyframes,
 } from "@chakra-ui/react";
+import { keyframes } from "@emotion/react";
 import { FaArrowRight, FaSearch, FaFilter, FaShoppingCart, FaEye } from "react-icons/fa";
 import { useState } from "react";
 import { motion } from "framer-motion";

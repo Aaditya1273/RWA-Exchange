@@ -11,7 +11,6 @@ import {
   Text,
   Tag,
   useColorModeValue,
-  keyframes,
   Icon,
   VStack,
   HStack,
@@ -22,6 +21,7 @@ import {
   StatNumber,
   StatHelpText,
 } from "@chakra-ui/react";
+import { keyframes } from "@emotion/react";
 import { Link } from "@chakra-ui/next-js";
 import { 
   FaHome, 

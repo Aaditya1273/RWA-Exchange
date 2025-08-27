@@ -24,10 +24,10 @@ import {
   useColorModeValue,
   Icon,
   Button,
-  keyframes,
   Alert,
   AlertIcon,
 } from "@chakra-ui/react";
+import { keyframes } from "@emotion/react";
 import { useState } from "react";
 import { useMarketplaceContext } from "@/hooks/useMarketplaceContext";
 import { useChainSwitching } from "@/hooks/useChainSwitching";

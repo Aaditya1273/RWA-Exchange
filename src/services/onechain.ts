@@ -328,7 +328,7 @@ export class OneChainWalletService {
       throw new Error('No wallet connected');
     }
     const secretKey = this.keypair.getSecretKey();
-    return toBase64(secretKey);
+    return Buffer.from(secretKey).toString("base64");
   }
 }
 
