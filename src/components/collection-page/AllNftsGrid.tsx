@@ -287,7 +287,7 @@ function isInCategory(metadata: any, category: Category): boolean {
                 </Text>
                 
                 {/* Asset Category */}
-                {item.metadata?.attributes && (
+                {Array.isArray(item.metadata?.attributes) && (
                   <HStack spacing={2} flexWrap="wrap">
                     {item.metadata.attributes
                       .filter((attr: any) => attr.trait_type === "category")
