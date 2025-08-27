@@ -81,9 +81,9 @@ export function Collection() {
         enabled: isLoading || !!contractMetadata?.image,
       },
     }
-  );
+  ) as { data: { metadata?: { image?: string } } | undefined; isLoading: boolean };
 
-  const thumbnailImage = contractMetadata?.image || firstNFT?.metadata.image || "";
+  const thumbnailImage = contractMetadata?.image || firstNFT?.metadata?.image || "";
   const totalSupply = supplyInfo ? Number(supplyInfo.endTokenId - supplyInfo.startTokenId + 1n) : 0;
 
   return (
