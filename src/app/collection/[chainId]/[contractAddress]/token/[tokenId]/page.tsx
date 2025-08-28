@@ -2,14 +2,18 @@
 
 import { Token } from "@/components/token-page/TokenPage";
 
-export default function ListingPage({
+export default function TokenPage({
   params,
 }: {
-  params: { tokenId: string };
+  params: { 
+    chainId: string;
+    contractAddress: string;
+    tokenId: string;
+  };
 }) {
   const { tokenId } = params;
   if (!tokenId) {
-    throw new Error("Missing listingId");
+    throw new Error("Missing tokenId");
   }
   return <Token tokenId={BigInt(tokenId)} />;
 }

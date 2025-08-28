@@ -33,6 +33,8 @@ import { useState } from "react";
 
 export function Collection() {
   const {
+    chainId,
+    contractAddress,
     contract,
     assets,
     listings,
@@ -319,6 +321,8 @@ export function Collection() {
                           
                           <HStack spacing={2} w="full">
                             <Button
+                              as="a"
+                              href={`/collection/${chainId}/${contractAddress}/token/${asset.tokenId}`}
                               size="sm"
                               variant="outline"
                               colorScheme="purple"
