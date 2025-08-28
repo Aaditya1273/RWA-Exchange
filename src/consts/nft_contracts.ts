@@ -1,125 +1,121 @@
-import type { Chain } from "thirdweb";
-import { onechainTestnet, onechainMainnet, avalancheFuji, polygonAmoy } from "./chains";
+// OneChain NFT contract configuration
+
+export type ChainInfo = {
+  id: number;
+  name: string;
+  symbol: string;
+  rpcUrl: string;
+};
 
 export type NftContract = {
   address: string;
-  chain: Chain;
   type: "ERC1155" | "ERC721";
-
   title?: string;
   description?: string;
   thumbnailUrl?: string;
   slug?: string;
   isDefault?: boolean;
+  chain: ChainInfo;
+};
+
+// OneChain network configuration
+export const ONECHAIN_TESTNET: ChainInfo = {
+  id: 1001,
+  name: "OneChain Testnet",
+  symbol: "ONE",
+  rpcUrl: "https://rpc-testnet.onelabs.cc:443",
+};
+
+export const ONECHAIN_MAINNET: ChainInfo = {
+  id: 1000,
+  name: "OneChain",
+  symbol: "ONE",
+  rpcUrl: "https://rpc-mainnet.onelabs.cc:443",
 };
 
 /**
- * Below is a list of all NFT contracts supported by your marketplace(s)
- * OneChain contracts are prioritized and shown first
+ * NFT contracts supported by the OneChain marketplace
  */
 export const NFT_CONTRACTS: NftContract[] = [
-  // OneChain Contracts (Primary)
   {
     address: "0x0000000000000000000000000000000000000000", // Replace with deployed PropertyNFT address
-    chain: onechainTestnet,
     title: "OneChain Property NFTs",
     description: "Tokenized real-world assets on OneChain network",
     thumbnailUrl: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=400&fit=crop",
     slug: "onechain-property-nfts",
     type: "ERC721",
     isDefault: true,
+    chain: ONECHAIN_TESTNET,
   },
   {
     address: "0x0000000000000000000000000000000000000000", // Replace with deployed Fractionalizer address
-    chain: onechainTestnet,
     title: "OneChain Fractionalized Assets",
     description: "Fractional ownership tokens for real-world assets",
     thumbnailUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=400&fit=crop",
     slug: "onechain-fractionalized",
     type: "ERC1155",
+    chain: ONECHAIN_TESTNET,
   },
   {
-    address: "0x0000000000000000000000000000000000000000", // Replace with deployed PropertyNFT address (mainnet)
-    chain: onechainMainnet,
-    title: "OneChain Property NFTs (Mainnet)",
-    description: "Production tokenized real-world assets on OneChain",
-    thumbnailUrl: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=400&fit=crop",
-    slug: "onechain-property-mainnet",
+    address: "0x1111111111111111111111111111111111111111",
+    title: "Luxury Real Estate Portfolio",
+    description: "Premium residential and commercial properties in prime locations",
+    thumbnailUrl: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=400&fit=crop",
+    slug: "luxury-real-estate",
     type: "ERC721",
-  },
-
-  // Legacy Contracts (Secondary support)
-  {
-    address: "0x6b869a0cF84147f05a447636c42b8E53De65714E",
-    chain: avalancheFuji,
-    title: "Steakhouse: Liberatorz",
-    thumbnailUrl:
-      "https://258c828e8cc853bf5e0efd001055fb39.ipfscdn.io/ipfs/bafybeigonh3hde5suwcb3qvkh6ljtvxv7ubfmcqbwfvi3ihoi3igd27jwe/SteakhouseLogo.svg",
-    type: "ERC721",
+    chain: ONECHAIN_TESTNET,
   },
   {
-    address: "0xC5A2c72c581eA4A17e17bEeF38a9597132830401",
-    chain: avalancheFuji,
-    title: "Ugly Waifu",
-    thumbnailUrl:
-      "https://258c828e8cc853bf5e0efd001055fb39.ipfscdn.io/ipfs/bafybeidaadqapi7twzd7pjp24tu4ngsr3teubrhop7hg3jk3oj6lqysfgm/OS-LOGO.png",
-    slug: "ugly-waifu",
-    type: "ERC721",
-  },
-  {
-    address: "0x0896Db00D8987Fba2152aa7c14c4255eBC7354cE",
-    chain: avalancheFuji,
-    title: "Unnamed Collection",
-    description: "",
-    thumbnailUrl:
-      "https://258c828e8cc853bf5e0efd001055fb39.ipfscdn.io/ipfs/Qmct2vS78Uwug3zVtqQognskPPRmd4wRQiaDAQWt1kRJws/0.png",
-    slug: "unnamed-collection",
-    type: "ERC721",
-  },
-  {
-    address: "0x0ACaCa3d3F64bb6e6D3564BBc891c58Bd4A4c83c",
-    chain: avalancheFuji,
-    title: "GoroBot",
-    thumbnailUrl:
-      "https://258c828e8cc853bf5e0efd001055fb39.ipfscdn.io/ipfs/bafybeiay3ffxy3os56bvnu5cmq7gids4v6n4hf5nvvcb3gy2dzavi3ltnu/profile.jpg",
-    slug: "gorobot",
-    type: "ERC721",
-  },
-  {
-    address: "0x4b6CDEFF5885A57678261bb95250aC43aD490752",
-    chain: polygonAmoy,
-    title: "Mata NFT",
-    thumbnailUrl:
-      "https://258c828e8cc853bf5e0efd001055fb39.ipfscdn.io/ipfs/bafybeidec7x6bptqmrxgptaedd7wfwxbsccqfogzwfsd4a7duxn4sdmnxy/0.png",
-    type: "ERC721",
-  },
-  {
-    address: "0xd5e815241882676F772A624E3892b27Ff3a449c4",
-    chain: avalancheFuji,
-    title: "Cats (ERC1155)",
-    thumbnailUrl:
-      "https://258c828e8cc853bf5e0efd001055fb39.ipfscdn.io/ipfs/bafybeif2nz6wbwuryijk2c4ayypocibexdeirlvmcqbwfvi3ihoi3igd27jwe/0.png",
+    address: "0x2222222222222222222222222222222222222222",
+    title: "Fine Art Collection",
+    description: "Curated collection of contemporary and classical artworks",
+    thumbnailUrl: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=400&fit=crop",
+    slug: "fine-art-collection",
     type: "ERC1155",
+    chain: ONECHAIN_TESTNET,
+  },
+  {
+    address: "0x3333333333333333333333333333333333333333",
+    title: "Precious Metals Vault",
+    description: "Gold, silver, and platinum bullion stored in secure vaults",
+    thumbnailUrl: "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=400&h=400&fit=crop",
+    slug: "precious-metals",
+    type: "ERC1155",
+    chain: ONECHAIN_TESTNET,
+  },
+  {
+    address: "0x4444444444444444444444444444444444444444",
+    title: "Vintage Wine Collection",
+    description: "Rare and vintage wines from renowned vineyards worldwide",
+    thumbnailUrl: "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=400&h=400&fit=crop",
+    slug: "vintage-wines",
+    type: "ERC721",
+    chain: ONECHAIN_TESTNET,
+  },
+  {
+    address: "0x5555555555555555555555555555555555555555",
+    title: "Classic Car Collection",
+    description: "Vintage and classic automobiles from prestigious manufacturers",
+    thumbnailUrl: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=400&fit=crop",
+    slug: "classic-cars",
+    type: "ERC721",
+    chain: ONECHAIN_TESTNET,
+  },
+  {
+    address: "0x6666666666666666666666666666666666666666",
+    title: "Renewable Energy Projects",
+    description: "Solar and wind energy infrastructure investments",
+    thumbnailUrl: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=400&h=400&fit=crop",
+    slug: "renewable-energy",
+    type: "ERC1155",
+    chain: ONECHAIN_TESTNET,
   },
 ];
 
 /**
- * Get the default NFT contract (OneChain)
+ * Get the default NFT contract
  */
 export const getDefaultNftContract = (): NftContract => {
   const defaultContract = NFT_CONTRACTS.find(contract => contract.isDefault);
-  if (!defaultContract) {
-    // Fallback to first OneChain contract if no default is explicitly set
-    return NFT_CONTRACTS.find(contract => contract.chain.id === 1001) || NFT_CONTRACTS[0];
-  }
-  return defaultContract;
-};
-
-/**
- * Get OneChain contracts only
- */
-export const getOneChainContracts = (): NftContract[] => {
-  return NFT_CONTRACTS.filter(contract => 
-    contract.chain.id === 1001 || contract.chain.id === 1000
-  );
+  return defaultContract || NFT_CONTRACTS[0];
 };

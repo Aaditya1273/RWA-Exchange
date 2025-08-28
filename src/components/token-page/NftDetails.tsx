@@ -1,4 +1,3 @@
-import { useMarketplaceContext } from "@/hooks/useMarketplaceContext";
 import { Link } from "@chakra-ui/next-js";
 import {
   AccordionButton,
@@ -9,26 +8,19 @@ import {
   Box,
   Flex,
 } from "@chakra-ui/react";
-import type { NFT } from "thirdweb";
-import { shortenAddress } from "thirdweb/utils";
+import { useMemo } from "react";
 
 type Props = {
-  nft: NFT;
+  nft: { id: string | number | bigint };
+  contractAddress: string;
+  chainName?: string;
+  explorerBaseUrl?: string;
+  tokenStandard?: string;
 };
 
-export function NftDetails(props: Props) {
-  const { type, nftContract } = useMarketplaceContext();
-  const { nft } = props;
-  const contractUrl = `${
-    nftContract.chain.blockExplorers
-      ? nftContract.chain.blockExplorers[0]?.url
-      : ""
-  }/address/${nftContract.address}`;
-  const tokenUrl = `${
-    nftContract.chain.blockExplorers
-      ? nftContract.chain.blockExplorers[0]?.url
-      : ""
-  }/nft/${nftContract.address}/${nft.id.toString()}`;
+export function NftDetails({ nft, contractAddress, chainName = "OneChain", explorerBaseUrl = "", tokenStandard = "ERC721" }: Props) {
+  const contractUrl = useMemo(() => (explorerBaseUrl ? `${explorerBaseUrl}/address/${contractAddress}` : "#"), [explorerBaseUrl, contractAddress]);
+  const tokenUrl = useMemo(() => (explorerBaseUrl ? `${explorerBaseUrl}/nft/${contractAddress}/${nft.id.toString()}` : "#"), [explorerBaseUrl, contractAddress, nft.id]);
   return (
     <AccordionItem>
       <Text>
@@ -43,7 +35,7 @@ export function NftDetails(props: Props) {
         <Flex direction="row" justifyContent="space-between" mb="1">
           <Text>Contract address</Text>
           <Link color="purple" href={contractUrl} target="_blank">
-            {shortenAddress(nftContract.address)}
+            {contractAddress}
           </Link>
         </Flex>
         <Flex direction="row" justifyContent="space-between" mb="1">
@@ -54,11 +46,11 @@ export function NftDetails(props: Props) {
         </Flex>
         <Flex direction="row" justifyContent="space-between" mb="1">
           <Text>Token Standard</Text>
-          <Text>{type}</Text>
+          <Text>{tokenStandard}</Text>
         </Flex>
         <Flex direction="row" justifyContent="space-between" mb="1">
           <Text>Chain</Text>
-          <Text>{nftContract.chain.name ?? "Unnamed chain"}</Text>
+          <Text>{chainName}</Text>
         </Flex>
       </AccordionPanel>
     </AccordionItem>

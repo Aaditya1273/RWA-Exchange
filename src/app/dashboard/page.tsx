@@ -2,25 +2,23 @@
 
 import { Box, Flex, Heading } from "@chakra-ui/react";
 import { useEffect } from "react";
-import { useActiveAccount, useConnectModal } from "thirdweb/react";
-import { client } from "@/consts/client";
+import { useOneChainWallet } from "@/hooks/useOneChainWallet";
 import Dashboard from "@/components/dashboard/Dashboard";
 
 export default function DashboardPage() {
-  const account = useActiveAccount();
-  const { connect } = useConnectModal();
+  const { account, connect, isConnected } = useOneChainWallet();
 
   useEffect(() => {
-    if (!account) {
-      connect({ client });
+    if (!isConnected) {
+      connect();
     }
-  }, [account, connect]);
+  }, [isConnected, connect]);
 
   if (!account)
     return (
       <Box>
         <Flex>
-          <Heading m="auto">Log in to continue</Heading>
+          <Heading m="auto">Connect OneChain Wallet to continue</Heading>
         </Flex>
       </Box>
     );

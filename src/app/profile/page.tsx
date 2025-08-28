@@ -1,24 +1,24 @@
 "use client";
 
 import { ProfileSection } from "@/components/profile-page/Profile";
-import { client } from "@/consts/client";
 import { Box, Flex, Heading } from "@chakra-ui/react";
 import { useEffect } from "react";
-import { useActiveAccount, useConnectModal } from "thirdweb/react";
+import { useOneChainWallet } from "@/hooks/useOneChainWallet";
 
 export default function ProfilePage() {
-  const account = useActiveAccount();
-  const { connect } = useConnectModal();
+  const { account, connect, isConnected } = useOneChainWallet();
+  
   useEffect(() => {
-    if (!account) {
-      connect({ client });
+    if (!isConnected) {
+      connect();
     }
-  }, [account, connect]);
+  }, [isConnected, connect]);
+  
   if (!account)
     return (
       <Box>
         <Flex>
-          <Heading m="auto">Log in to continue</Heading>
+          <Heading m="auto">Connect OneChain Wallet to continue</Heading>
         </Flex>
       </Box>
     );

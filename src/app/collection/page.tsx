@@ -231,7 +231,7 @@ export default function CollectionPage() {
                 backdropFilter="blur(10px)"
               >
                 <Badge colorScheme="purple" variant="subtle" fontSize="xs">
-                  {item.chain.name || "Multi-chain"}
+                  {item.chain?.name || "Multi-chain"}
                 </Badge>
               </Box>
             </Box>
@@ -281,7 +281,7 @@ export default function CollectionPage() {
                   <HStack spacing={2} w="full">
                     <Button
                       as={Link}
-                      href={`/collection/${item.chain.id.toString()}/${item.address}`}
+                      href={`/collection/${item.chain?.id?.toString() || 'default'}/${item.address}`}
                       size="sm"
                       variant="outline"
                       colorScheme="purple"
@@ -295,7 +295,7 @@ export default function CollectionPage() {
                     </Button>
                     <Button
                       as={Link}
-                      href={`/collection/${item.chain.id.toString()}/${item.address}?action=buy`}
+                      href={`/collection/${item.chain?.id?.toString() || 'default'}/${item.address}?action=buy`}
                       size="sm"
                       colorScheme="purple"
                       flex={1}

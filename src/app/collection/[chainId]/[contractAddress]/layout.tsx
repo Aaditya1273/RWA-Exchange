@@ -1,4 +1,5 @@
 import MarketplaceProvider from "@/hooks/useMarketplaceContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import type { ReactNode } from "react";
 
 export default function MarketplaceLayout({
@@ -9,11 +10,13 @@ export default function MarketplaceLayout({
   params: { contractAddress: string; chainId: string };
 }) {
   return (
-    <MarketplaceProvider
-      chainId={params.chainId}
-      contractAddress={params.contractAddress}
-    >
-      {children}
-    </MarketplaceProvider>
+    <ErrorBoundary>
+      <MarketplaceProvider
+        chainId={params.chainId}
+        contractAddress={params.contractAddress}
+      >
+        {children}
+      </MarketplaceProvider>
+    </ErrorBoundary>
   );
 }

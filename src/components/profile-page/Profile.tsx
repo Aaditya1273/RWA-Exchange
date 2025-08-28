@@ -1,216 +1,30 @@
-import {
-  Box,
-  Flex,
-  Heading,
-  Img,
-  SimpleGrid,
-  Tab,
-  TabList,
-  Tabs,
-  Text,
-  useBreakpointValue,
-} from "@chakra-ui/react";
+import { Box, Flex, Heading, Img, Text } from "@chakra-ui/react";
 import { blo } from "blo";
-import { shortenAddress } from "thirdweb/utils";
-import type { Account } from "thirdweb/wallets";
-import { ProfileMenu } from "./Menu";
-import { useState } from "react";
-import { NFT_CONTRACTS, type NftContract } from "@/consts/nft_contracts";
-import {
-  MediaRenderer,
-  useActiveAccount,
-  useReadContract,
-} from "thirdweb/react";
-import { getContract, toEther } from "thirdweb";
-import { client } from "@/consts/client";
-import { getOwnedERC721s } from "@/extensions/getOwnedERC721s";
-import { OwnedItem } from "./OwnedItem";
-import { getAllValidListings, type ListingItem } from "thirdweb/extensions/marketplace";
-import type { NFTItem } from "thirdweb/extensions/erc721";
-import { MARKETPLACE_CONTRACTS } from "@/consts/marketplace_contract";
-import { Link } from "@chakra-ui/next-js";
-import { getOwnedERC1155s } from "@/extensions/getOwnedERC1155s";
-import { ExternalLinkIcon } from "@chakra-ui/icons";
-import { useGetENSAvatar } from "@/hooks/useGetENSAvatar";
-import { useGetENSName } from "@/hooks/useGetENSName";
+import { useMemo } from "react";
 
-type Props = {
-  address: string;
-};
+type Props = { address: string };
 
-export function ProfileSection(props: Props) {
-  const { address } = props;
-  const account = useActiveAccount();
-  const isYou = address.toLowerCase() === account?.address.toLowerCase();
-  const { data: ensName } = useGetENSName({ address });
-  const { data: ensAvatar } = useGetENSAvatar({ ensName });
-  const [tabIndex, setTabIndex] = useState<number>(0);
-  const [selectedCollection, setSelectedCollection] = useState<NftContract>(
-    NFT_CONTRACTS[0]
-  );
-  const contract = getContract({
-    address: selectedCollection.address,
-    chain: selectedCollection.chain,
-    client,
-  });
+function shorten(addr: string) {
+  return addr && addr.length > 8 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+}
 
-  const {
-    data,
-    error,
-    isLoading: isLoadingOwnedNFTs,
-  } = useReadContract(
-    selectedCollection.type === "ERC1155" ? getOwnedERC1155s : getOwnedERC721s,
-    {
-      contract,
-      owner: address,
-      requestPerSec: 50,
-      queryOptions: {
-        enabled: !!address,
-      },
-    }
-  );
-
-  const chain = contract.chain;
-  const marketplaceContractAddress = MARKETPLACE_CONTRACTS.find(
-    (o) => o.chain.id === chain.id
-  )?.address;
-  if (!marketplaceContractAddress) throw Error("No marketplace contract found");
-  const marketplaceContract = getContract({
-    address: marketplaceContractAddress,
-    chain,
-    client,
-  });
-  const { data: allValidListings, isLoading: isLoadingValidListings } =
-    useReadContract(getAllValidListings, {
-      contract: marketplaceContract,
-      queryOptions: { enabled: data && data.length > 0 },
-    });
-  const listings = allValidListings?.length
-    ? allValidListings.filter(
-        (item: ListingItem) =>
-          item.assetContractAddress.toLowerCase() ===
-            contract.address.toLowerCase() &&
-          item.creatorAddress.toLowerCase() === address.toLowerCase()
-      )
-    : [];
-  const columns = useBreakpointValue({ base: 1, sm: 2, md: 2, lg: 2, xl: 4 });
+export function ProfileSection({ address }: Props) {
+  const avatar = useMemo(() => blo((address || "0x").slice(0, 42) as `0x${string}`), [address]);
   return (
     <Box px={{ lg: "50px", base: "20px" }}>
       <Flex direction={{ lg: "row", md: "column", sm: "column" }} gap={5}>
-        <Img
-          src={ensAvatar ?? blo(address as `0x${string}`)}
-          w={{ lg: 150, base: 100 }}
-          rounded="8px"
-        />
+        <Img src={avatar} w={{ lg: 150, base: 100 }} rounded="8px" />
         <Box my="auto">
-          <Heading>{ensName ?? "Unnamed"}</Heading>
-          <Text color="gray">{shortenAddress(address)}</Text>
+          <Heading>{shorten(address)}</Heading>
+          <Text color="gray">Public profile</Text>
         </Box>
       </Flex>
 
-      <Flex direction={{ lg: "row", base: "column" }} gap="10" mt="20px">
-        <ProfileMenu
-          selectedCollection={selectedCollection}
-          setSelectedCollection={setSelectedCollection}
-        />
-        {isLoadingOwnedNFTs ? (
-          <Box>
-            <Text>Loading...</Text>
-          </Box>
-        ) : (
-          <>
-            <Box>
-              <Flex direction="row" justifyContent="space-between" px="12px">
-                <Tabs
-                  variant="soft-rounded"
-                  onChange={(index) => setTabIndex(index)}
-                  isLazy
-                  defaultIndex={0}
-                >
-                  <TabList>
-                    <Tab>Owned ({data?.length})</Tab>
-                    <Tab>Listings ({listings.length || 0})</Tab>
-                    {/* <Tab>Auctions ({allAuctions?.length || 0})</Tab> */}
-                  </TabList>
-                </Tabs>
-                <Link
-                  href={`/collection/${selectedCollection.chain.id}/${selectedCollection.address}`}
-                  color="gray"
-                >
-                  View asset pool <ExternalLinkIcon mx="2px" />
-                </Link>
-              </Flex>
-              <SimpleGrid columns={columns} spacing={4} p={4}>
-                {tabIndex === 0 ? (
-                  <>
-                    {data && data.length > 0 ? (
-                      <>
-                        {data?.map((item: NFTItem) => (
-                          <OwnedItem
-                            key={item.id.toString()}
-                            nftCollection={contract}
-                            nft={item}
-                          />
-                        ))}
-                      </>
-                    ) : (
-                      <Box>
-                        <Text>
-                          {isYou
-                            ? "You"
-                            : ensName
-                            ? ensName
-                            : shortenAddress(address)}{" "}
-                          {isYou ? "do" : "does"} not own any Property in this
-                          asset pool
-                        </Text>
-                      </Box>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {listings && listings.length > 0 ? (
-                      <>
-                        {listings?.map((item: ListingItem) => (
-                          <Box
-                            key={item.id}
-                            rounded="12px"
-                            as={Link}
-                            href={`/collection/${contract.chain.id}/${
-                              contract.address
-                            }/token/${item.asset.id.toString()}`}
-                            _hover={{ textDecoration: "none" }}
-                            w={250}
-                          >
-                            <Flex direction="column">
-                              <MediaRenderer
-                                client={client}
-                                src={item.asset.metadata.image}
-                              />
-                              <Text mt="12px">
-                                {item.asset?.metadata?.name ?? "Unknown item"}
-                              </Text>
-                              <Text>Price</Text>
-                              <Text>
-                                {toEther(item.pricePerToken)}{" "}
-                                {item.currencyValuePerToken.symbol}
-                              </Text>
-                            </Flex>
-                          </Box>
-                        ))}
-                      </>
-                    ) : (
-                      <Box>
-                        You do not have any listing within this asset pool
-                      </Box>
-                    )}
-                  </>
-                )}
-              </SimpleGrid>
-            </Box>
-          </>
-        )}
-      </Flex>
+      <Box mt="24px">
+        <Text color="gray.500">
+          Portfolio data will appear here once OneChain read helpers are implemented.
+        </Text>
+      </Box>
     </Box>
   );
 }

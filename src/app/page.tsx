@@ -376,14 +376,14 @@ export default function Home() {
                       </Text>
                     </VStack>
                     <Badge colorScheme="green" variant="subtle" px={3} py={1}>
-                      {item.chain.name || "Multi-chain"}
+                      {item.chain?.name || "Multi-chain"}
                     </Badge>
                   </HStack>
                   
                   <HStack spacing={3} w="full" pt={2}>
                     <Button
                       as={Link}
-                      href={`/collection/${item.chain.id.toString()}/${item.address}`}
+                      href={`/collection/${item.chain?.id?.toString() || 'default'}/${item.address}`}
                       size="sm"
                       variant="outline"
                       colorScheme="purple"
@@ -395,7 +395,7 @@ export default function Home() {
                     </Button>
                     <Button
                       as={Link}
-                      href={`/collection/${item.chain.id.toString()}/${item.address}?action=buy`}
+                      href={`/collection/${item.chain?.id?.toString() || 'default'}/${item.address}?action=buy`}
                       size="sm"
                       colorScheme="purple"
                       flex={1}

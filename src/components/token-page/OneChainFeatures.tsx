@@ -32,8 +32,7 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { FaLink, FaCut, FaCoins, FaArrowRight, FaCheckCircle } from "react-icons/fa";
-import { useActiveAccount } from "thirdweb/react";
-import { getRWAContractsForChain } from "@/consts/rwa_contracts";
+import { useOneChainWallet } from "@/hooks/useOneChainWallet";
 
 interface OneChainFeaturesProps {
   chainId: number;
@@ -42,7 +41,7 @@ interface OneChainFeaturesProps {
 }
 
 export function OneChainFeatures({ chainId, tokenId, isOwner }: OneChainFeaturesProps) {
-  const account = useActiveAccount();
+  const { account } = useOneChainWallet();
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [fractionCount, setFractionCount] = useState(100);
@@ -52,9 +51,8 @@ export function OneChainFeatures({ chainId, tokenId, isOwner }: OneChainFeatures
   const borderColor = useColorModeValue("gray.200", "gray.600");
   
   const isOneChain = chainId === 1001 || chainId === 1000;
-  const rwaContracts = getRWAContractsForChain(chainId);
   
-  if (!isOneChain || !rwaContracts) {
+  if (!isOneChain) {
     return null;
   }
 

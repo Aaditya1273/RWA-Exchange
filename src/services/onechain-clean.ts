@@ -1,16 +1,8 @@
-import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
-import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
-import { Transaction } from '@mysten/sui/transactions';
-import { fromB64 } from '@mysten/sui/utils';
-import { oneChainWalletStandardService, WalletStandardAccount } from './onechain-wallet-standard';
-
-export interface ZkLoginData {
-  userAddress: string;
-  ephemeralKeyPair: Ed25519Keypair;
-  zkProof: string;
-  userSalt: string;
-  maxEpoch: number;
-}
+import { SuiClient } from '@mysten/sui.js/client';
+import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
+import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { fromB64 } from '@mysten/sui.js/utils';
+import { ZkLoginData } from './zklogin';
 
 export interface WalletAccount {
   address: string;
@@ -33,8 +25,8 @@ class OneChainService {
 
   constructor(config?: OneChainConfig) {
     this.config = config || {
-      rpcUrl: process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://fullnode.testnet.sui.io:443',
-      faucetUrl: process.env.NEXT_PUBLIC_ONECHAIN_FAUCET_URL || 'https://faucet.testnet.sui.io/v2/gas',
+      rpcUrl: process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443',
+      faucetUrl: process.env.NEXT_PUBLIC_ONECHAIN_FAUCET_URL || 'https://faucet-testnet.onelabs.cc:443',
       network: (process.env.NEXT_PUBLIC_ONECHAIN_NETWORK as 'testnet' | 'mainnet') || 'testnet'
     };
     
@@ -42,45 +34,52 @@ class OneChainService {
   }
 
   /**
-   * Connect to browser extension wallet using Wallet Standard
-   */
-  async connectWalletExtension(): Promise<WalletAccount> {
-    try {
-      const account = await oneChainWalletStandardService.connectWalletExtension();
-      return {
-        address: account.address,
-        publicKey: account.publicKey,
-        chains: account.chains
-      };
-    } catch (error) {
-      console.error('Failed to connect extension wallet:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Check if wallet extension is available
-   */
-  isWalletExtensionAvailable(): boolean {
-    return oneChainWalletStandardService.isWalletExtensionAvailable();
-  }
-
-  /**
-   * Disconnect wallet extension
-   */
-  async disconnect(): Promise<void> {
-    await oneChainWalletStandardService.disconnect();
-  }
-
-  /**
-   * Legacy method for backward compatibility
+   * Connect to browser extension wallet (OneChain/Sui compatible)
    */
   async connectExtensionWallet(): Promise<WalletAccount | null> {
     try {
-      return await this.connectWalletExtension();
+      // Check for OneChain wallet first, then Sui wallet, then fallback
+      const getWallet = () => {
+        if (typeof window === 'undefined') return null;
+        if ((window as any).onechainWallet) return (window as any).onechainWallet;
+        if ((window as any).sui) return (window as any).sui;
+        if ((window as any).one) return (window as any).one;
+        return null;
+      };
+
+      const wallet = getWallet();
+      if (!wallet) {
+        throw new Error('No compatible wallet found. Please install OneChain or Sui wallet.');
+      }
+
+      // Request permissions
+      if (typeof wallet.requestPermissions === 'function') {
+        await wallet.requestPermissions();
+      } else if (typeof wallet.request === 'function') {
+        await wallet.request({ method: 'eth_requestAccounts' });
+      }
+
+      // Get accounts
+      let accounts = [];
+      if (typeof wallet.getAccounts === 'function') {
+        accounts = await wallet.getAccounts();
+      } else if (typeof wallet.request === 'function') {
+        accounts = await wallet.request({ method: 'eth_accounts' });
+      }
+
+      if (accounts && accounts.length > 0) {
+        const userAddress = accounts[0].address ? accounts[0].address : accounts[0];
+        return {
+          address: userAddress,
+          publicKey: accounts[0].publicKey,
+          chains: accounts[0].chains
+        };
+      }
+      
+      return null;
     } catch (error) {
       console.error('Failed to connect extension wallet:', error);
-      return null;
+      throw error;
     }
   }
 
@@ -93,7 +92,7 @@ class OneChainService {
     scoresObjectId: string
   ): Promise<boolean> {
     try {
-      const tx = new Transaction();
+      const tx = new TransactionBlock();
       tx.moveCall({
         target: `${packageId}::contract_one::get_leaderboard`,
         arguments: [tx.object(scoresObjectId)],
@@ -147,14 +146,14 @@ class OneChainService {
     initialScore: number = 10000
   ): Promise<any> {
     try {
-      const tx = new Transaction();
+      const tx = new TransactionBlock();
 
       // Register user
       tx.moveCall({
         target: `${packageId}::contract_one::register_user`,
         arguments: [
           tx.object(scoresObjectId),
-          tx.pure.address(userAddress)
+          tx.pure(userAddress)
         ],
       });
 
@@ -163,8 +162,8 @@ class OneChainService {
         target: `${packageId}::contract_one::update_score`,
         arguments: [
           tx.object(scoresObjectId),
-          tx.pure.address(userAddress),
-          tx.pure.u64(initialScore)
+          tx.pure(userAddress),
+          tx.pure(initialScore)
         ],
       });
 
@@ -176,21 +175,15 @@ class OneChainService {
   }
 
   /**
-   * Execute transaction with wallet using Wallet Standard
+   * Execute transaction with wallet
    */
   async executeTransactionWithWallet(
     walletProvider: any,
-    transactionBlock: Transaction
+    transactionBlock: TransactionBlock
   ): Promise<any> {
     try {
-      // Use the new Wallet Standard service if connected
-      if (oneChainWalletStandardService.isConnected()) {
-        return await oneChainWalletStandardService.signAndExecuteTransaction(transactionBlock);
-      }
-
-      // Fallback to legacy wallet provider
-      const result = await walletProvider.signAndExecuteTransaction({
-        transaction: transactionBlock,
+      const result = await walletProvider.signAndExecuteTransactionBlock({
+        transactionBlock,
         options: {
           showEffects: true,
           showObjectChanges: true,
@@ -205,36 +198,11 @@ class OneChainService {
   }
 
   /**
-   * Sign transaction using Wallet Standard
-   */
-  async signTransaction(transaction: Transaction): Promise<{ signature: string; signedTransaction: Uint8Array }> {
-    if (!oneChainWalletStandardService.isConnected()) {
-      throw new Error('Wallet not connected');
-    }
-
-    return await oneChainWalletStandardService.signTransaction(transaction);
-  }
-
-  /**
-   * Sign and execute transaction using Wallet Standard
-   */
-  async signAndExecuteTransaction(
-    transaction: Transaction,
-    options?: { showEffects?: boolean; showObjectChanges?: boolean }
-  ): Promise<any> {
-    if (!oneChainWalletStandardService.isConnected()) {
-      throw new Error('Wallet not connected');
-    }
-
-    return await oneChainWalletStandardService.signAndExecuteTransaction(transaction, options);
-  }
-
-  /**
    * Create ZkLogin transaction
    */
   async createZkLoginTransaction(
     zkLoginData: ZkLoginData,
-    transactionBlock: Transaction
+    transactionBlock: TransactionBlock
   ): Promise<any> {
     try {
       // Set sender and gas budget
@@ -245,7 +213,7 @@ class OneChainService {
       const txBytes = await transactionBlock.build({ client: this.suiClient });
       
       // Sign with ephemeral key
-      const signature = await zkLoginData.ephemeralKeyPair.signTransaction(txBytes);
+      const signature = await zkLoginData.ephemeralKeyPair.signTransactionBlock(txBytes);
       
       // Execute transaction
       const result = await this.suiClient.executeTransactionBlock({
@@ -269,40 +237,25 @@ class OneChainService {
   }
 
   /**
-   * Create RWA investment transaction using Wallet Standard pattern
+   * Create RWA investment transaction
    */
   async createRWAInvestmentTransaction(
     investor: string,
     projectAddress: string,
     amount: string
-  ): Promise<Transaction> {
-    // Use the Wallet Standard service to create the transaction
-    return await oneChainWalletStandardService.createRWAInvestmentTransaction(
-      projectAddress,
-      amount,
-      investor
-    );
-  }
-
-  /**
-   * Create sponsored RWA investment transaction
-   */
-  async createSponsoredRWAInvestmentTransaction(
-    investor: string,
-    projectAddress: string,
-    amount: string,
-    sponsor: string,
-    sponsorCoins: string[]
-  ): Promise<Transaction> {
-    // First create the base transaction
-    const baseTx = await this.createRWAInvestmentTransaction(investor, projectAddress, amount);
+  ): Promise<TransactionBlock> {
+    const tx = new TransactionBlock();
     
-    // Convert to sponsored transaction
-    return await oneChainWalletStandardService.createSponsoredTransaction(
-      baseTx,
-      sponsor,
-      sponsorCoins
-    );
+    // Example RWA investment call
+    tx.moveCall({
+      target: `${projectAddress}::property_nft::invest`,
+      arguments: [
+        tx.pure(amount),
+        tx.pure(investor)
+      ],
+    });
+    
+    return tx;
   }
 
   /**
@@ -312,8 +265,8 @@ class OneChainService {
     claimer: string,
     projectAddress: string,
     tokenObjectId: string
-  ): Promise<Transaction> {
-    const tx = new Transaction();
+  ): Promise<TransactionBlock> {
+    const tx = new TransactionBlock();
     
     // Call dividend claim function
     tx.moveCall({
@@ -325,32 +278,20 @@ class OneChainService {
   }
 
   /**
-   * Create transaction using Wallet Standard pattern
+   * Create and execute transaction
    */
   async createTransaction(
     sender: string,
     recipient: string,
     amount: string,
     coinType: string = '0x2::sui::SUI'
-  ): Promise<Transaction> {
-    // Use the Wallet Standard service to create the transaction
-    return await oneChainWalletStandardService.createTransactionForWallet(
-      recipient,
-      amount,
-      coinType
-    );
-  }
-
-  /**
-   * Create and execute transaction with Wallet Standard
-   */
-  async createAndExecuteTransaction(
-    recipient: string,
-    amount: string,
-    coinType: string = '0x2::sui::SUI'
-  ): Promise<any> {
-    const tx = await this.createTransaction('', recipient, amount, coinType);
-    return await this.signAndExecuteTransaction(tx);
+  ): Promise<TransactionBlock> {
+    const tx = new TransactionBlock();
+    
+    const [coin] = tx.splitCoins(tx.gas, [tx.pure(amount)]);
+    tx.transferObjects([coin], tx.pure(recipient));
+    
+    return tx;
   }
 
   /**

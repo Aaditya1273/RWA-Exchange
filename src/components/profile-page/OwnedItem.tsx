@@ -1,27 +1,28 @@
-import { client } from "@/consts/client";
-import { Box, Flex, Link, Text } from "@chakra-ui/react";
+import { Box, Flex, Link, Text, Img } from "@chakra-ui/react";
 import { ComplianceBadge } from "@/components/shared/ComplianceBadge";
-import type { NFT, ThirdwebContract } from "thirdweb";
-import { MediaRenderer } from "thirdweb/react";
 
-export function OwnedItem(props: {
-  nft: NFT;
-  nftCollection: ThirdwebContract;
-}) {
+type SimpleNFT = {
+  id: string | number | bigint;
+  metadata: { image?: string; name?: string; attributes?: any[] };
+};
+
+type SimpleCollection = {
+  address: string;
+};
+
+export function OwnedItem(props: { nft: SimpleNFT; nftCollection: SimpleCollection }) {
   const { nft, nftCollection } = props;
   return (
     <>
       <Box
         rounded="12px"
         as={Link}
-        href={`/collection/${nftCollection.chain.id}/${
-          nftCollection.address
-        }/token/${nft.id.toString()}`}
+        href="#"
         _hover={{ textDecoration: "none" }}
         w={250}
       >
         <Flex direction="column">
-          <MediaRenderer client={client} src={nft.metadata.image} />
+          <Img src={String(nft.metadata.image || "")} alt="NFT" rounded="md" />
           <Text>{nft.metadata?.name ?? "Unknown item"}</Text>
           <ComplianceBadge verified={isVerified(nft.metadata)} />
         </Flex>

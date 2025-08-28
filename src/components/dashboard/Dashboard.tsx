@@ -19,15 +19,10 @@ import {
   VStack,
   Icon,
 } from "@chakra-ui/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { FaLink, FaNetworkWired } from "react-icons/fa";
-import { client } from "@/consts/client";
-import { NFT_CONTRACTS, type NftContract, getDefaultNftContract, getOneChainContracts } from "@/consts/nft_contracts";
-import { useChainSwitching } from "@/hooks/useChainSwitching";
-import { getContract } from "thirdweb";
-import { getOwnedERC1155s } from "@/extensions/getOwnedERC1155s";
-import { getOwnedERC721s } from "@/extensions/getOwnedERC721s";
-import { useActiveAccount, useReadContract } from "thirdweb/react";
+import { NFT_CONTRACTS, type NftContract, getDefaultNftContract } from "@/consts/nft_contracts";
+import { useOneChainWallet } from "@/hooks/useOneChainWallet";
 
 // Lightweight sparkline without extra deps
 function Sparkline({ data, height = 40 }: { data: number[]; height?: number }) {
@@ -88,38 +83,19 @@ function isInCategory(metadata: any, category: "property" | "carbon"): boolean {
 }
 
 export default function Dashboard() {
-  const account = useActiveAccount();
-  const { isOnSupportedChain, switchToDefaultChain, currentChain } = useChainSwitching();
+  const { account, isConnected } = useOneChainWallet();
+  // TODO: wire these to actual chain-switching helpers when available
+  const isOnSupportedChain = true;
+  const switchToDefaultChain = () => {};
+  const currentChain: { name?: string } | null = null;
   const [selectedCollection, setSelectedCollection] = useState<NftContract>(
     getDefaultNftContract()
   );
-  const contract = useMemo(
-    () =>
-      getContract({
-        address: selectedCollection.address,
-        chain: selectedCollection.chain,
-        client,
-      }),
-    [selectedCollection]
-  );
-
-  const { data: owned } = useReadContract(
-    selectedCollection.type === "ERC1155" ? getOwnedERC1155s : getOwnedERC721s,
-    {
-      contract,
-      owner: (account?.address ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
-      requestPerSec: 50,
-      queryOptions: { enabled: !!account?.address },
-    }
-  );
-
-  const totalOwned = owned?.length || 0;
-  const propertyOwned = (owned || []).filter((o: any) =>
-    isInCategory(o.metadata, "property")
-  ).length;
-  const carbonOwned = (owned || []).filter((o: any) =>
-    isInCategory(o.metadata, "carbon")
-  ).length;
+  // Owned NFTs placeholders until OneChain read helpers are implemented
+  const owned: any[] = [];
+  const totalOwned = 0;
+  const propertyOwned = 0;
+  const carbonOwned = 0;
 
   // Mock ROI and history data placeholders
   const roiPct = 0; // Replace when real yield data is available
@@ -128,8 +104,8 @@ export default function Dashboard() {
     return [10, 11, 9, 12, 13, 12, 14, 13, 15, 16];
   }, []);
 
-  const oneChainContracts = getOneChainContracts();
-  const isOneChainSelected = selectedCollection.chain.id === 1001 || selectedCollection.chain.id === 1000;
+  const oneChainContracts = NFT_CONTRACTS;
+  const isOneChainSelected = true;
 
   return (
     <Box px={{ lg: "50px", base: "20px" }}>
@@ -196,25 +172,16 @@ export default function Dashboard() {
               const next = NFT_CONTRACTS.find((c) => c.address === e.target.value);
               if (next) setSelectedCollection(next);
             }}
+            aria-label="Select NFT collection"
+            title="Select NFT collection"
           >
-            <optgroup label="OneChain Networks (Recommended)">
-              {oneChainContracts.map((c) => (
-                <option key={c.address} value={c.address}>
-                  🔗 {(c.title ?? c.slug ?? c.address.slice(0, 8))} ({c.chain.name})
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Legacy Networks">
-              {NFT_CONTRACTS.filter(c => c.chain.id !== 1001 && c.chain.id !== 1000).map((c) => (
-                <option key={c.address} value={c.address}>
-                  {(c.title ?? c.slug ?? c.address.slice(0, 8))} ({c.chain.name})
-                </option>
-              ))}
-            </optgroup>
+            {oneChainContracts.map((c) => (
+              <option key={c.address} value={c.address}>
+                {(c.title ?? c.slug ?? c.address.slice(0, 8))}
+              </option>
+            ))}
           </Select>
-          <Text fontSize="xs" color="gray.500">
-            {selectedCollection.chain.name} • {selectedCollection.type}
-          </Text>
+          <Text fontSize="xs" color="gray.500">OneChain • {selectedCollection.type}</Text>
         </VStack>
       </Flex>
 

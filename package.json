@@ -28,10 +28,14 @@
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@harmony-js/core": "^0.1.57",
+    "@mysten/sui": "^1.37.5",
     "@oneid-xyz/inspect": "^1.1.1",
-    "@onelabs/sui": "^1.26.2",
     "@openzeppelin/contracts": "^5.4.0",
+    "@reduxjs/toolkit": "^2.8.2",
     "@tanstack/react-query": "^5.44.0",
+    "@wallet-standard/base": "^1.1.0",
+    "@wallet-standard/features": "^1.1.0",
+    "@wallet-standard/wallet": "^1.1.0",
     "blo": "^1.2.0",
     "framer-motion": "^11.2.10",
     "next": "14.2.4",
@@ -39,8 +43,8 @@
     "react": "^18",
     "react-dom": "^18",
     "react-icons": "^5.2.1",
-    "scrypt-js": "^3.0.1",
-    "thirdweb": "^5.105.33"
+    "react-redux": "^9.2.0",
+    "scrypt-js": "^3.0.1"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.1.0",

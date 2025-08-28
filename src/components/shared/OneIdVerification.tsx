@@ -12,10 +12,9 @@ import {
 } from '@chakra-ui/react';
 import { FaShieldAlt, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 import { useState } from 'react';
-import type { Account } from 'thirdweb/wallets';
 
 type Props = {
-  account: Account;
+  account: { address: string };
 };
 
 export function OneIdVerification({ account }: Props) {
