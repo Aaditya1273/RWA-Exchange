@@ -1,7 +1,7 @@
 import { SuiClient } from '@mysten/sui.js/client';
 import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
 import { TransactionBlock } from '@mysten/sui.js/transactions';
-import { fromBase64, toBase64 } from '@mysten/sui.js/utils';
+import { fromB64 } from '@mysten/sui.js/utils';
 
 // ZkLogin Configuration
 export interface ZkLoginConfig {
@@ -120,7 +120,7 @@ export class ZkLoginService {
       const response = await fetch(this.config.saltUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ jwt }),
       });
@@ -149,7 +149,7 @@ export class ZkLoginService {
         },
         body: JSON.stringify({
           jwt,
-          extendedEphemeralPublicKey: zkLoginData.ephemeralKeyPair.getPublicKey().toExtendedBytes(),
+          extendedEphemeralPublicKey: zkLoginData.ephemeralKeyPair.getPublicKey().toBase64(),
           maxEpoch: zkLoginData.maxEpoch,
           jwtRandomness: zkLoginData.jwtRandomness,
           salt: zkLoginData.userSalt,
