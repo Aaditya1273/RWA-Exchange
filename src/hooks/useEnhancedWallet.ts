@@ -12,7 +12,7 @@ import {
 } from '@/store/walletSlice';
 import { oneChainService, WalletAccount } from '@/services/onechain';
 import { zkLoginService, ZkLoginData } from '@/services/zklogin';
-import { Transaction } from '@onelabs/sui/transactions';
+import { Transaction } from '@mysten/sui/transactions';
 
 export interface UseEnhancedWalletReturn {
   // Basic wallet info
@@ -105,8 +105,8 @@ export const useEnhancedWallet = (): UseEnhancedWalletReturn => {
     if (!account) return;
 
     try {
-      const objects = await oneChainService.getOwnedObjects(account.address);
-      dispatch(setOwnedObjects(objects.data || []));
+      const objects = await oneChainService.getRWATokens(account.address);
+      dispatch(setOwnedObjects(objects || []));
     } catch (err) {
       console.error('Error refreshing owned objects:', err);
     }
@@ -123,12 +123,12 @@ export const useEnhancedWallet = (): UseEnhancedWalletReturn => {
     setError(null);
 
     try {
-      const txDigest = await oneChainService.createTransaction(
-        account.address,
+      const result = await oneChainService.createAndExecuteTransaction(
         recipient,
         amount
       );
 
+      const txDigest = result.digest || result.effects?.transactionDigest || 'unknown';
       dispatch(setLastTransactionHash(txDigest));
       
       // Refresh balance after successful transaction

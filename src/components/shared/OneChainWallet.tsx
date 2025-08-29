@@ -252,7 +252,7 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" {...({} as any)}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>OneChain Wallet</ModalHeader>
