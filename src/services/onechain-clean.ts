@@ -1,7 +1,7 @@
-import { SuiClient } from '@mysten/sui.js/client';
-import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
-import { TransactionBlock } from '@mysten/sui.js/transactions';
-import { fromB64 } from '@mysten/sui.js/utils';
+import { SuiClient } from '@mysten/sui/client';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { Transaction } from '@mysten/sui/transactions';
+import { fromB64 } from '@mysten/sui/utils';
 import { ZkLoginData } from './zklogin';
 
 export interface WalletAccount {
@@ -92,7 +92,7 @@ class OneChainService {
     scoresObjectId: string
   ): Promise<boolean> {
     try {
-      const tx = new TransactionBlock();
+      const tx = new Transaction();
       tx.moveCall({
         target: `${packageId}::contract_one::get_leaderboard`,
         arguments: [tx.object(scoresObjectId)],
@@ -146,14 +146,14 @@ class OneChainService {
     initialScore: number = 10000
   ): Promise<any> {
     try {
-      const tx = new TransactionBlock();
+      const tx = new Transaction();
 
       // Register user
       tx.moveCall({
         target: `${packageId}::contract_one::register_user`,
         arguments: [
           tx.object(scoresObjectId),
-          tx.pure(userAddress)
+          tx.pure.address(userAddress)
         ],
       });
 
@@ -162,8 +162,8 @@ class OneChainService {
         target: `${packageId}::contract_one::update_score`,
         arguments: [
           tx.object(scoresObjectId),
-          tx.pure(userAddress),
-          tx.pure(initialScore)
+          tx.pure.address(userAddress),
+          tx.pure.u64(initialScore)
         ],
       });
 
@@ -179,10 +179,10 @@ class OneChainService {
    */
   async executeTransactionWithWallet(
     walletProvider: any,
-    transactionBlock: TransactionBlock
+    transactionBlock: Transaction
   ): Promise<any> {
     try {
-      const result = await walletProvider.signAndExecuteTransactionBlock({
+      const result = await walletProvider.signAndExecuteTransaction({
         transactionBlock,
         options: {
           showEffects: true,
@@ -202,18 +202,18 @@ class OneChainService {
    */
   async createZkLoginTransaction(
     zkLoginData: ZkLoginData,
-    transactionBlock: TransactionBlock
+    transactionBlock: Transaction
   ): Promise<any> {
     try {
       // Set sender and gas budget
-      transactionBlock.setSender(zkLoginData.userAddress);
+      transactionBlock.setSender(zkLoginData.address || zkLoginData.sub);
       transactionBlock.setGasBudget(10000000);
 
       // Build transaction
       const txBytes = await transactionBlock.build({ client: this.suiClient });
       
       // Sign with ephemeral key
-      const signature = await zkLoginData.ephemeralKeyPair.signTransactionBlock(txBytes);
+      const signature = await zkLoginData.ephemeralKeyPair.signTransaction(txBytes);
       
       // Execute transaction
       const result = await this.suiClient.executeTransactionBlock({
@@ -243,15 +243,15 @@ class OneChainService {
     investor: string,
     projectAddress: string,
     amount: string
-  ): Promise<TransactionBlock> {
-    const tx = new TransactionBlock();
+  ): Promise<Transaction> {
+    const tx = new Transaction();
     
     // Example RWA investment call
     tx.moveCall({
       target: `${projectAddress}::property_nft::invest`,
       arguments: [
-        tx.pure(amount),
-        tx.pure(investor)
+        tx.pure.u64(amount),
+        tx.pure.address(investor)
       ],
     });
     
@@ -265,8 +265,8 @@ class OneChainService {
     claimer: string,
     projectAddress: string,
     tokenObjectId: string
-  ): Promise<TransactionBlock> {
-    const tx = new TransactionBlock();
+  ): Promise<Transaction> {
+    const tx = new Transaction();
     
     // Call dividend claim function
     tx.moveCall({
@@ -285,11 +285,11 @@ class OneChainService {
     recipient: string,
     amount: string,
     coinType: string = '0x2::sui::SUI'
-  ): Promise<TransactionBlock> {
-    const tx = new TransactionBlock();
+  ): Promise<Transaction> {
+    const tx = new Transaction();
     
-    const [coin] = tx.splitCoins(tx.gas, [tx.pure(amount)]);
-    tx.transferObjects([coin], tx.pure(recipient));
+    const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(amount)]);
+    tx.transferObjects([coin], tx.pure.address(recipient));
     
     return tx;
   }
