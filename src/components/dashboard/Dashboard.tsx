@@ -84,10 +84,23 @@ function isInCategory(metadata: any, category: "property" | "carbon"): boolean {
 
 export default function Dashboard() {
   const { account, isConnected } = useOneChainWallet();
+  // Define chain type
+  type Chain = {
+    id: string;
+    name: string;
+    isSupported?: boolean;
+  };
+
   // TODO: wire these to actual chain-switching helpers when available
   const isOnSupportedChain = true;
   const switchToDefaultChain = () => {};
-  const currentChain: { name?: string } | null = null;
+  
+  // Initialize with proper type
+  const [currentChain, setCurrentChain] = useState<Chain | null>({
+    id: 'onechain',
+    name: 'OneChain',
+    isSupported: true
+  });
   const [selectedCollection, setSelectedCollection] = useState<NftContract>(
     getDefaultNftContract()
   );
@@ -126,7 +139,7 @@ export default function Dashboard() {
                 Wrong Network Detected
               </Text>
               <Text fontSize="sm" color="red.600">
-                You're connected to {currentChain?.name}. Switch to OneChain for the best experience.
+                You're connected to {currentChain?.name ?? 'an unsupported network'}. Switch to OneChain for the best experience.
               </Text>
             </VStack>
             <Box ml="auto">
