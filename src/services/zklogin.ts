@@ -189,15 +189,18 @@ export class ZkLoginService {
   /**
    * Derive Sui address from ZkLogin data
    */
-  deriveZkLoginAddress(zkLoginData: ZkLoginData): string {
-    // This is a simplified version - actual implementation would use Sui's zkLogin address derivation
-    const addressSeed = `${zkLoginData.sub}-${zkLoginData.userSalt}`;
-    const hash = crypto.subtle.digest('SHA-256', new TextEncoder().encode(addressSeed));
-    return hash.then(buffer => {
+  async deriveZkLoginAddress(zkLoginData: ZkLoginData): Promise<string> {
+    try {
+      // This is a simplified version - actual implementation would use Sui's zkLogin address derivation
+      const addressSeed = `${zkLoginData.sub}-${zkLoginData.userSalt}`;
+      const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(addressSeed));
       const hashArray = Array.from(new Uint8Array(buffer));
       const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
       return `0x${hashHex.slice(0, 40)}`;
-    });
+    } catch (error) {
+      console.error('Error deriving ZkLogin address:', error);
+      throw error;
+    }
   }
 
   /**

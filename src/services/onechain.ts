@@ -245,7 +245,7 @@ class OneChainService {
       const txBytes = await transactionBlock.build({ client: this.suiClient });
       
       // Sign with ephemeral key
-      const signature = await zkLoginData.ephemeralKeyPair.signTransaction(txBytes);
+      const { signature } = await zkLoginData.ephemeralKeyPair.signTransactionBlock(txBytes);
       
       // Execute transaction
       const result = await this.suiClient.executeTransactionBlock({
