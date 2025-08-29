@@ -183,15 +183,6 @@ class OneChainWalletStandardService {
         return result;
       }
 
-      // Fallback to direct wallet API
-      if (this.wallet.signTransaction) {
-        const result = await this.wallet.signTransaction({
-          transaction: transaction,
-          account: this.connectedAccount,
-        });
-        return result;
-      }
-
       throw new Error('Wallet does not support transaction signing');
     } catch (error) {
       console.error('Failed to sign transaction:', error);
@@ -223,24 +214,7 @@ class OneChainWalletStandardService {
         return result;
       }
 
-      // Fallback to direct wallet API
-      if (this.wallet.signAndExecuteTransaction) {
-        const result = await this.wallet.signAndExecuteTransaction({
-          transaction: transaction,
-          account: this.connectedAccount,
-          options: txOptions,
-        });
-        return result;
-      }
-
-      // Another fallback pattern
-      if (this.wallet.signAndExecuteTransactionBlock) {
-        const result = await this.wallet.signAndExecuteTransactionBlock({
-          transactionBlock: transaction,
-          options: txOptions,
-        });
-        return result;
-      }
+      // No direct wallet API fallback needed for Wallet Standard
 
       throw new Error('Wallet does not support transaction execution');
     } catch (error) {
