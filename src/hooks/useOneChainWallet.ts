@@ -2,22 +2,27 @@ import { useState, useEffect, useCallback } from 'react';
 import { oneChainService, WalletAccount } from '@/services/onechain';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 
+// Extended wallet account type that includes balance
+export interface WalletAccountWithBalance extends WalletAccount {
+  balance?: string;
+}
+
 export interface UseOneChainWalletReturn {
-  account: WalletAccount | null;
+  account: WalletAccountWithBalance | null;
   isConnected: boolean;
   isLoading: boolean;
   error: string | null;
-  connect: () => Promise<WalletAccount>;
+  connect: () => Promise<WalletAccountWithBalance>;
   disconnect: () => void;
-  createWallet: () => Promise<WalletAccount>;
-  importWallet: (privateKey: string) => Promise<WalletAccount>;
+  createWallet: () => Promise<WalletAccountWithBalance>;
+  importWallet: (privateKey: string) => Promise<WalletAccountWithBalance>;
   getBalance: () => Promise<string>;
   requestFromFaucet: () => Promise<boolean>;
   sendTransaction: (recipient: string, amount: string) => Promise<string>;
 }
 
 export const useOneChainWallet = (): UseOneChainWalletReturn => {
-  const [account, setAccount] = useState<WalletAccount | null>(null);
+  const [account, setAccount] = useState<WalletAccountWithBalance | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +42,7 @@ export const useOneChainWallet = (): UseOneChainWalletReturn => {
     }
   }, []);
 
-  const connect = useCallback(async (): Promise<WalletAccount> => {
+  const connect = useCallback(async (): Promise<WalletAccountWithBalance> => {
     setIsLoading(true);
     setError(null);
 
@@ -87,7 +92,7 @@ export const useOneChainWallet = (): UseOneChainWalletReturn => {
     setError(null);
   }, []);
 
-  const createWallet = useCallback(async (): Promise<WalletAccount> => {
+  const createWallet = useCallback(async (): Promise<WalletAccountWithBalance> => {
     setIsLoading(true);
     setError(null);
 
@@ -114,7 +119,7 @@ export const useOneChainWallet = (): UseOneChainWalletReturn => {
     }
   }, []);
 
-  const importWallet = useCallback(async (privateKey: string): Promise<WalletAccount> => {
+  const importWallet = useCallback(async (privateKey: string): Promise<WalletAccountWithBalance> => {
     setIsLoading(true);
     setError(null);
 

@@ -388,7 +388,7 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
                         <Input
                           placeholder="Enter your private key"
                           value={privateKey}
-                          onChange={(e) => setPrivateKey(e.target.value)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrivateKey(e.target.value)}
                           type="password"
                           bg="white"
                         />
