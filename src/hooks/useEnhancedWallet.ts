@@ -12,7 +12,7 @@ import {
 } from '@/store/walletSlice';
 import { oneChainService, WalletAccount } from '@/services/onechain';
 import { zkLoginService, ZkLoginData } from '@/services/zklogin';
-import { Transaction } from '@mysten/sui/transactions';
+import { TransactionBlock } from '@mysten/sui.js/transactions';
 
 export interface UseEnhancedWalletReturn {
   // Basic wallet info
@@ -38,7 +38,7 @@ export interface UseEnhancedWalletReturn {
   refreshBalance: () => Promise<void>;
   refreshOwnedObjects: () => Promise<void>;
   sendTransaction: (recipient: string, amount: string) => Promise<string>;
-  sendZkLoginTransaction: (transaction: Transaction) => Promise<string>;
+  sendZkLoginTransaction: (transaction: TransactionBlock) => Promise<string>;
   requestFromFaucet: () => Promise<boolean>;
   
   // Utilities
@@ -148,7 +148,7 @@ export const useEnhancedWallet = (): UseEnhancedWalletReturn => {
   }, [account, dispatch, refreshBalance]);
 
   // Send ZkLogin transaction
-  const sendZkLoginTransaction = useCallback(async (transaction: Transaction): Promise<string> => {
+  const sendZkLoginTransaction = useCallback(async (transaction: TransactionBlock): Promise<string> => {
     if (!zkLoginData) {
       throw new Error('ZkLogin not available');
     }

@@ -1,7 +1,7 @@
-import { SuiClient } from '@onelabs/sui/client';
-import { Ed25519Keypair } from '@onelabs/sui/keypairs/ed25519';
-import { Transaction } from '@onelabs/sui/transactions';
-import { fromBase64, toBase64 } from '@onelabs/sui/utils';
+import { SuiClient } from '@mysten/sui.js/client';
+import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
+import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { fromBase64, toBase64 } from '@mysten/sui.js/utils';
 
 // ZkLogin Configuration
 export interface ZkLoginConfig {
@@ -241,26 +241,26 @@ export class ZkLoginService {
    */
   async createZkLoginTransaction(
     zkLoginData: ZkLoginData,
-    transaction: Transaction
+    transaction: TransactionBlock
   ): Promise<string> {
     try {
-      if (!zkLoginData.address) {
-        throw new Error('ZkLogin address not available');
+      if (!zkLoginData.address || !zkLoginData.zkProof) {
+        throw new Error('ZkLogin address or ZK proof not available');
       }
 
       // Set sender
       transaction.setSender(zkLoginData.address);
 
       // Sign with ephemeral key pair
-      const signature = await this.client.signTransaction({
+      const { bytes, signature: userSignature } = await transaction.sign({
+        client: this.client,
         signer: zkLoginData.ephemeralKeyPair,
-        transaction,
       });
 
       // Execute with ZK proof
       const result = await this.client.executeTransactionBlock({
-        transactionBlock: signature.transactionBlockBytes,
-        signature: [signature.signature, zkLoginData.zkProof],
+        transactionBlock: bytes,
+        signature: [userSignature, zkLoginData.zkProof],
       });
 
       return result.digest;

@@ -34,7 +34,7 @@
 - [Contributing](#contributing)
 - [License](#license)
 ## Gallery
-<img width="1893" height="909" alt="Screenshot 2025-08-19 010205" src="https://github.com/user-attachments/assets/290fc772-35c8-4882-8b99-4b444a4c1d21" />
+<img width="1898" height="909" alt="Screenshot 2025-08-29 093347" src="https://github.com/user-attachments/assets/31fc7089-66f2-4ff1-8efa-f2d639adc248" />
 <img width="1891" height="916" alt="Screenshot 2025-08-19 010358" src="https://github.com/user-attachments/assets/3859a78f-323f-416d-801e-e2c76bc32e17" />
 <img width="1899" height="917" alt="Screenshot 2025-08-19 010918" src="https://github.com/user-attachments/assets/9f0a939e-93fb-4890-9ef0-dc2fe6f1bf7c" />
 <img width="1896" height="921" alt="Screenshot 2025-08-19 011112" src="https://github.com/user-attachments/assets/3ce77519-82ba-4cce-84a7-81d507285ceb" />
