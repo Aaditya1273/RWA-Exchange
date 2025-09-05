@@ -378,9 +378,9 @@ class OneChainWalletStandardService {
       }
 
       // Method 3: Try direct wallet methods (legacy support)
-      if (this.wallet.signAndExecuteTransactionBlock) {
+      if ((this.wallet as any).signAndExecuteTransactionBlock) {
         try {
-          const result = await this.wallet.signAndExecuteTransactionBlock({
+          const result = await (this.wallet as any).signAndExecuteTransactionBlock({
             transactionBlock: transaction,
             options: txOptions,
           });
@@ -402,9 +402,9 @@ class OneChainWalletStandardService {
       }
 
       // Method 4: Try even more legacy methods
-      if (this.wallet.signAndExecuteTransaction) {
+      if ((this.wallet as any).signAndExecuteTransaction) {
         try {
-          const result = await this.wallet.signAndExecuteTransaction({
+          const result = await (this.wallet as any).signAndExecuteTransaction({
             transaction,
             options: txOptions,
           });
@@ -610,7 +610,7 @@ class OneChainWalletStandardService {
     const hasAccount = !!this.connectedAccount;
     
     // Also check if account has a valid address
-    const hasValidAddress = this.connectedAccount?.address && this.connectedAccount.address.length > 0;
+    const hasValidAddress = !!(this.connectedAccount?.address && this.connectedAccount.address.length > 0);
     
     return hasWallet && hasAccount && hasValidAddress;
   }
@@ -677,14 +677,14 @@ class OneChainWalletStandardService {
       'sui:signAndExecuteTransaction': !!(this.wallet.features && this.wallet.features['sui:signAndExecuteTransaction']),
       
       // Legacy methods
-      'connect': typeof this.wallet.connect === 'function',
-      'disconnect': typeof this.wallet.disconnect === 'function',
-      'getAccounts': typeof this.wallet.getAccounts === 'function',
-      'signAndExecuteTransactionBlock': typeof this.wallet.signAndExecuteTransactionBlock === 'function',
-      'signAndExecuteTransaction': typeof this.wallet.signAndExecuteTransaction === 'function',
-      'signTransaction': typeof this.wallet.signTransaction === 'function',
-      'requestPermissions': typeof this.wallet.requestPermissions === 'function',
-      'enable': typeof this.wallet.enable === 'function',
+      'connect': typeof (this.wallet as any).connect === 'function',
+      'disconnect': typeof (this.wallet as any).disconnect === 'function',
+      'getAccounts': typeof (this.wallet as any).getAccounts === 'function',
+      'signAndExecuteTransactionBlock': typeof (this.wallet as any).signAndExecuteTransactionBlock === 'function',
+      'signAndExecuteTransaction': typeof (this.wallet as any).signAndExecuteTransaction === 'function',
+      'signTransaction': typeof (this.wallet as any).signTransaction === 'function',
+      'requestPermissions': typeof (this.wallet as any).requestPermissions === 'function',
+      'enable': typeof (this.wallet as any).enable === 'function',
     };
 
     console.log('Wallet capabilities:', capabilities);
@@ -702,8 +702,8 @@ class OneChainWalletStandardService {
 
       // Try to get accounts to verify connection is still active
       let accounts = [];
-      if (this.wallet.getAccounts) {
-        accounts = await this.wallet.getAccounts();
+      if ((this.wallet as any).getAccounts) {
+        accounts = await (this.wallet as any).getAccounts();
       } else if (this.wallet.accounts) {
         accounts = this.wallet.accounts;
       }

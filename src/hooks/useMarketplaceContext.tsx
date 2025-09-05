@@ -209,7 +209,7 @@ export default function MarketplaceProvider({
       // Get real properties from blockchain
       const properties = await oneChainService.getProperties();
       
-      const realAssets: MarketplaceAsset[] = await Promise.all(
+      const realAssetsWithNulls = await Promise.all(
         properties.map(async (property, index) => {
           try {
             // Get property details
@@ -272,7 +272,7 @@ export default function MarketplaceProvider({
       );
 
       // Filter out null values and add some sample assets if no real ones exist
-      const validAssets = realAssets.filter(asset => asset !== null) as MarketplaceAsset[];
+      const validAssets = realAssetsWithNulls.filter(asset => asset !== null) as MarketplaceAsset[];
       
       if (validAssets.length === 0) {
         // Add sample assets if no real properties exist
