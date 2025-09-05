@@ -25,6 +25,7 @@ export interface UseWalletStandardReturn {
   ) => Promise<Transaction>;
   refreshBalance: () => Promise<void>;
   getOwnedObjects: (filter?: any) => Promise<any[]>;
+  checkConnectionState: () => Promise<boolean>;
   isWalletAvailable: boolean;
 }
 
@@ -37,20 +38,35 @@ export const useWalletStandard = (): UseWalletStandardReturn => {
   const isConnected = !!account;
   const isWalletAvailable = oneChainWalletStandardService.isWalletExtensionAvailable();
 
-  // Load saved wallet state on mount
+  // Load saved wallet state on mount and verify connection
   useEffect(() => {
-    const savedAccount = localStorage.getItem('onechain_wallet_standard');
-    if (savedAccount) {
-      try {
-        const accountData = JSON.parse(savedAccount);
-        setAccount(accountData);
-        // Refresh balance for saved account
-        refreshBalanceForAccount(accountData);
-      } catch (err) {
-        console.error('Error loading saved wallet:', err);
-        localStorage.removeItem('onechain_wallet_standard');
+    const initializeWallet = async () => {
+      const savedAccount = localStorage.getItem('onechain_wallet_standard');
+      if (savedAccount) {
+        try {
+          const accountData = JSON.parse(savedAccount);
+          
+          // Verify the connection is still active
+          const isStillConnected = await oneChainWalletStandardService.refreshConnectionState();
+          
+          if (isStillConnected) {
+            setAccount(accountData);
+            // Refresh balance for saved account
+            refreshBalanceForAccount(accountData);
+          } else {
+            // Connection lost, clear saved data
+            localStorage.removeItem('onechain_wallet_standard');
+            setAccount(null);
+          }
+        } catch (err) {
+          console.error('Error loading saved wallet:', err);
+          localStorage.removeItem('onechain_wallet_standard');
+          setAccount(null);
+        }
       }
-    }
+    };
+
+    initializeWallet();
   }, []);
 
   const refreshBalanceForAccount = async (accountData: WalletStandardAccount) => {
@@ -219,6 +235,25 @@ export const useWalletStandard = (): UseWalletStandardReturn => {
     [isConnected]
   );
 
+  const checkConnectionState = useCallback(async (): Promise<boolean> => {
+    try {
+      const isStillConnected = await oneChainWalletStandardService.refreshConnectionState();
+      
+      if (!isStillConnected && account) {
+        // Connection lost, update state
+        setAccount(null);
+        setBalance('0');
+        localStorage.removeItem('onechain_wallet_standard');
+        return false;
+      }
+      
+      return isStillConnected;
+    } catch (error) {
+      console.error('Error checking connection state:', error);
+      return false;
+    }
+  }, [account]);
+
   return {
     account,
     isConnected,
@@ -234,6 +269,7 @@ export const useWalletStandard = (): UseWalletStandardReturn => {
     createSponsoredTransaction,
     refreshBalance,
     getOwnedObjects,
+    checkConnectionState,
     isWalletAvailable,
   };
 };

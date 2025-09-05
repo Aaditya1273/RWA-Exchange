@@ -1,0 +1,11 @@
+{
+  "network": "onechain-testnet",
+  "rpcUrl": "https://rpc-testnet.onelabs.cc:443",
+  "deployerAddress": "0x571d6b07e959de05c28d0f24c7b8c399394fbe0f1f5963357f35d63a43f57d33",
+  "timestamp": "2025-09-05T10:38:10.085Z",
+  "contracts": {
+    "PropertyNFT": "0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2",
+    "Fractionalizer": "0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2",
+    "EchoVillageContract": "0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2"
+  }
+}

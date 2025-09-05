@@ -1,0 +1,9 @@
+{
+  "network": "testnet",
+  "packageId": "0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2",
+  "deployerAddress": "0x212174e0558a24845ec2d4c3ab5928edbd4450e6625976d3801317a0294ca8aa",
+  "transactionDigest": "mock-deployment-digest",
+  "timestamp": "2025-09-05T12:20:00.000Z",
+  "modules": ["property_nft"],
+  "rpcUrl": "https://fullnode.testnet.sui.io:443"
+}

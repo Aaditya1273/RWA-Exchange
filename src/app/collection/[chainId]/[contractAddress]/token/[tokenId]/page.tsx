@@ -15,5 +15,5 @@ export default function TokenPage({
   if (!tokenId) {
     throw new Error("Missing tokenId");
   }
-  return <Token tokenId={BigInt(tokenId)} />;
+  return <Token tokenId={tokenId} />;
 }

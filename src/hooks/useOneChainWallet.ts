@@ -13,6 +13,7 @@ export interface UseOneChainWalletReturn {
   isLoading: boolean;
   error: string | null;
   connect: () => Promise<WalletAccountWithBalance>;
+  connectExtension: () => Promise<WalletAccountWithBalance>;
   disconnect: () => void;
   createWallet: () => Promise<WalletAccountWithBalance>;
   importWallet: (privateKey: string) => Promise<WalletAccountWithBalance>;
@@ -42,49 +43,37 @@ export const useOneChainWallet = (): UseOneChainWalletReturn => {
     }
   }, []);
 
-  const connect = useCallback(async (): Promise<WalletAccountWithBalance> => {
+  const connectExtension = useCallback(async (): Promise<WalletAccountWithBalance> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Try to connect to wallet extension first
-      const extensionAccount = await oneChainService.connectExtensionWallet();
+      // Use the proper wallet extension connection method
+      const extensionAccount = await oneChainService.connectWalletExtension();
       
-      if (extensionAccount) {
-        // Get balance
-        const balance = await oneChainService.getBalance(extensionAccount.address);
-        const accountWithBalance = { ...extensionAccount, balance };
-        
-        setAccount(accountWithBalance);
-        
-        // Save to localStorage
-        localStorage.setItem('onechain_wallet', JSON.stringify(accountWithBalance));
-        
-        return accountWithBalance;
-      } else {
-        // Fallback to creating a new wallet
-        const { keypair, address } = oneChainService.generateProgrammaticWallet();
-        const newAccount = { address, publicKey: keypair.getPublicKey().toBase64() };
-        
-        // Get balance
-        const balance = await oneChainService.getBalance(newAccount.address);
-        const accountWithBalance = { ...newAccount, balance };
-        
-        setAccount(accountWithBalance);
-        
-        // Save to localStorage
-        localStorage.setItem('onechain_wallet', JSON.stringify(accountWithBalance));
-        
-        return accountWithBalance;
-      }
+      // Get balance
+      const balance = await oneChainService.getBalance(extensionAccount.address);
+      const accountWithBalance = { ...extensionAccount, balance };
+      
+      setAccount(accountWithBalance);
+      
+      // Save to localStorage
+      localStorage.setItem('onechain_wallet', JSON.stringify(accountWithBalance));
+      
+      return accountWithBalance;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to connect wallet';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to connect wallet extension';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  // Legacy connect method for backward compatibility - now just connects to extension
+  const connect = useCallback(async (): Promise<WalletAccountWithBalance> => {
+    return await connectExtension();
+  }, [connectExtension]);
 
   const disconnect = useCallback(() => {
     setAccount(null);
@@ -236,6 +225,7 @@ export const useOneChainWallet = (): UseOneChainWalletReturn => {
     isLoading,
     error,
     connect,
+    connectExtension,
     disconnect,
     createWallet,
     importWallet,

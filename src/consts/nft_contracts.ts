@@ -38,7 +38,7 @@ export const ONECHAIN_MAINNET: ChainInfo = {
  */
 export const NFT_CONTRACTS: NftContract[] = [
   {
-    address: "0x0000000000000000000000000000000000000000", // Replace with deployed PropertyNFT address
+    address: "0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2", // Replace with deployed PropertyNFT address
     title: "OneChain Property NFTs",
     description: "Tokenized real-world assets on OneChain network",
     thumbnailUrl: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=400&fit=crop",
@@ -48,7 +48,7 @@ export const NFT_CONTRACTS: NftContract[] = [
     chain: ONECHAIN_TESTNET,
   },
   {
-    address: "0x0000000000000000000000000000000000000000", // Replace with deployed Fractionalizer address
+    address: "0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2", // Replace with deployed Fractionalizer address
     title: "OneChain Fractionalized Assets",
     description: "Fractional ownership tokens for real-world assets",
     thumbnailUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=400&fit=crop",

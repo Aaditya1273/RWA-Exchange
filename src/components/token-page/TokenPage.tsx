@@ -67,13 +67,15 @@ import {
 } from "react-icons/fa";
 import { useMarketplaceContext } from "@/hooks/useMarketplaceContext";
 import { useWalletStandard } from "@/hooks/useWalletStandard";
+
+import { WalletSyncUtil } from "@/utils/walletSync";
 import { motion } from "framer-motion";
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
 
 interface TokenProps {
-    tokenId: bigint;
+    tokenId: string;
 }
 
 export function Token({ tokenId }: TokenProps) {
@@ -91,12 +93,20 @@ export function Token({ tokenId }: TokenProps) {
         refresh
     } = useMarketplaceContext();
 
-    const { isConnected, connect, account } = useWalletStandard();
+    const { isConnected, connect, account, checkConnectionState } = useWalletStandard();
     const toast = useToast();
 
     const [buyingAsset, setBuyingAsset] = useState(false);
     const [claimingDividends, setClaimingDividends] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
+    const [lastTransactionHash, setLastTransactionHash] = useState<string | null>(null);
+    const [showTransactionSuccess, setShowTransactionSuccess] = useState(false);
+
+    // Helper function to format transaction hash for display
+    const formatTransactionHash = (hash: string) => {
+        if (hash.length <= 20) return hash;
+        return `${hash.slice(0, 10)}...${hash.slice(-10)}`;
+    };
 
     const cardBg = useColorModeValue("white", "gray.800");
     const textColor = useColorModeValue("gray.600", "gray.300");
@@ -104,7 +114,7 @@ export function Token({ tokenId }: TokenProps) {
     const bgColor = useColorModeValue("gray.50", "gray.900");
 
     // Find the asset by tokenId
-    const asset = assets.find(a => a.tokenId === tokenId.toString());
+    const asset = assets.find(a => a.tokenId === tokenId);
     const listing = listings.find(l => l.assetId === asset?.id && l.isActive);
     const assetTransactions = transactions.filter(t => t.assetId === asset?.id);
 
@@ -154,25 +164,33 @@ export function Token({ tokenId }: TokenProps) {
     });
 
     const handleBuyAsset = async () => {
-        if (!isConnected) {
-            toast({
-                title: "Wallet not connected",
-                description: "Please connect your wallet to make a purchase",
-                status: "warning",
-                duration: 3000,
-                isClosable: true,
-            });
-            return;
-        }
-
         if (!asset || !listing) return;
 
         setBuyingAsset(true);
+        
         try {
+            // Validate wallet connection using the sync utility
+            const validation = await WalletSyncUtil.validateConnectionForTransaction();
+            
+            if (!validation.isValid) {
+                toast({
+                    title: "Purchase failed",
+                    description: validation.error || "Wallet not connected",
+                    status: "error",
+                    duration: validation.error?.includes('does not support') ? 8000 : 3000,
+                    isClosable: true,
+                });
+                return;
+            }
+
             const txHash = await buyAsset(asset.id, listing.price);
+            setLastTransactionHash(txHash);
+            setShowTransactionSuccess(true);
+            // Auto-hide after 30 seconds
+            setTimeout(() => setShowTransactionSuccess(false), 30000);
             toast({
                 title: "Purchase successful!",
-                description: `Transaction hash: ${txHash.slice(0, 10)}...`,
+                description: `Asset purchased successfully! View transaction details below.`,
                 status: "success",
                 duration: 5000,
                 isClosable: true,
@@ -191,25 +209,33 @@ export function Token({ tokenId }: TokenProps) {
     };
 
     const handleInvestInAsset = async (amount: string) => {
-        if (!isConnected) {
-            toast({
-                title: "Wallet not connected",
-                description: "Please connect your wallet to invest",
-                status: "warning",
-                duration: 3000,
-                isClosable: true,
-            });
-            return;
-        }
-
         if (!asset) return;
 
         setBuyingAsset(true);
+        
         try {
+            // Validate wallet connection using the sync utility
+            const validation = await WalletSyncUtil.validateConnectionForTransaction();
+            
+            if (!validation.isValid) {
+                toast({
+                    title: "Investment failed",
+                    description: validation.error || "Wallet not connected",
+                    status: "error",
+                    duration: validation.error?.includes('does not support') ? 8000 : 3000,
+                    isClosable: true,
+                });
+                return;
+            }
+
             const txHash = await investInAsset(asset.id, amount);
+            setLastTransactionHash(txHash);
+            setShowTransactionSuccess(true);
+            // Auto-hide after 30 seconds
+            setTimeout(() => setShowTransactionSuccess(false), 30000);
             toast({
                 title: "Investment successful!",
-                description: `Transaction hash: ${txHash.slice(0, 10)}...`,
+                description: `Investment completed successfully! View transaction details below.`,
                 status: "success",
                 duration: 5000,
                 isClosable: true,
@@ -233,9 +259,13 @@ export function Token({ tokenId }: TokenProps) {
         setClaimingDividends(true);
         try {
             const txHash = await claimDividends(asset.id);
+            setLastTransactionHash(txHash);
+            setShowTransactionSuccess(true);
+            // Auto-hide after 30 seconds
+            setTimeout(() => setShowTransactionSuccess(false), 30000);
             toast({
                 title: "Dividends claimed!",
-                description: `Transaction hash: ${txHash.slice(0, 10)}...`,
+                description: `Dividends claimed successfully! View transaction details below.`,
                 status: "success",
                 duration: 5000,
                 isClosable: true,
@@ -314,6 +344,136 @@ export function Token({ tokenId }: TokenProps) {
                         <BreadcrumbLink>{asset.title}</BreadcrumbLink>
                     </BreadcrumbItem>
                 </Breadcrumb>
+
+                {/* Transaction Success Display */}
+                {showTransactionSuccess && lastTransactionHash && (
+                    <MotionCard
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        bg="green.50"
+                        borderColor="green.200"
+                        borderWidth={2}
+                        rounded="xl"
+                        shadow="lg"
+                        mb={6}
+                    >
+                        <CardBody>
+                            <VStack spacing={4}>
+                                <HStack>
+                                    <Box
+                                        w={12}
+                                        h={12}
+                                        bg="green.500"
+                                        rounded="full"
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        color="white"
+                                        fontSize="xl"
+                                    >
+                                        ✓
+                                    </Box>
+                                    <VStack align="start" spacing={1}>
+                                        <Heading size="md" color="green.700">
+                                            Transaction Successful!
+                                        </Heading>
+                                        <Text color="green.600" fontSize="sm">
+                                            Your transaction has been confirmed on the OneChain network
+                                        </Text>
+                                    </VStack>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => setShowTransactionSuccess(false)}
+                                        ml="auto"
+                                    >
+                                        ✕
+                                    </Button>
+                                </HStack>
+                                
+                                <Box
+                                    w="full"
+                                    p={4}
+                                    bg="white"
+                                    rounded="lg"
+                                    borderWidth={1}
+                                    borderColor="green.200"
+                                >
+                                    <VStack spacing={3}>
+                                        <HStack justify="space-between" w="full">
+                                            <Text fontWeight="600" color="gray.700">
+                                                Transaction Hash:
+                                            </Text>
+                                            <HStack>
+                                                <Button
+                                                    size="xs"
+                                                    variant="outline"
+                                                    colorScheme="green"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(lastTransactionHash);
+                                                        toast({
+                                                            title: "Copied!",
+                                                            description: "Transaction hash copied to clipboard",
+                                                            status: "success",
+                                                            duration: 2000,
+                                                        });
+                                                    }}
+                                                >
+                                                    Copy
+                                                </Button>
+                                            </HStack>
+                                        </HStack>
+                                        <Box
+                                            w="full"
+                                            p={3}
+                                            bg="gray.50"
+                                            rounded="md"
+                                            fontFamily="mono"
+                                            fontSize="sm"
+                                            wordBreak="break-all"
+                                            color="gray.800"
+                                        >
+                                            {lastTransactionHash}
+                                        </Box>
+                                        <HStack spacing={2} w="full">
+                                            <Link
+                                                href={`https://testnet.suivision.xyz/txblock/${lastTransactionHash}`}
+                                                isExternal
+                                                flex={1}
+                                            >
+                                                <Button
+                                                    size="sm"
+                                                    colorScheme="blue"
+                                                    variant="outline"
+                                                    w="full"
+                                                    rightIcon={<FaExternalLinkAlt />}
+                                                >
+                                                    View on SuiVision
+                                                </Button>
+                                            </Link>
+                                            <Link
+                                                href={`https://suiscan.xyz/testnet/tx/${lastTransactionHash}`}
+                                                isExternal
+                                                flex={1}
+                                            >
+                                                <Button
+                                                    size="sm"
+                                                    colorScheme="purple"
+                                                    variant="outline"
+                                                    w="full"
+                                                    rightIcon={<FaExternalLinkAlt />}
+                                                >
+                                                    View on SuiScan
+                                                </Button>
+                                            </Link>
+                                        </HStack>
+                                    </VStack>
+                                </Box>
+                            </VStack>
+                        </CardBody>
+                    </MotionCard>
+                )}
 
                 <Grid templateColumns={{ base: "1fr", lg: "1fr 400px" }} gap={8}>
                     {/* Main Content */}
@@ -711,25 +871,25 @@ export function Token({ tokenId }: TokenProps) {
                                 </CardHeader>
                                 <CardBody>
                                     <VStack spacing={6}>
-                                        {listing && (
+                                        {(listing || asset?.isListed) && (
                                             <>
-                                                {listing.fractionalShares ? (
+                                                {(listing?.fractionalShares || asset?.metadata?.totalShares) ? (
                                                     <VStack spacing={4} w="full">
                                                         <HStack justify="space-between" w="full">
                                                             <Text fontWeight="600">Price per Share</Text>
                                                             <Text fontSize="xl" fontWeight="700" color="green.500">
-                                                                ${(parseInt(listing.fractionalShares.pricePerShare) / 100).toLocaleString()}
+                                                                ${(parseInt((listing?.fractionalShares?.pricePerShare || asset?.price || '0')) / 100).toLocaleString()}
                                                             </Text>
                                                         </HStack>
                                                         <Box w="full">
                                                             <HStack justify="space-between" mb={2}>
                                                                 <Text fontSize="sm">Available Shares</Text>
                                                                 <Text fontSize="sm">
-                                                                    {listing.fractionalShares.availableShares}/{listing.fractionalShares.totalShares}
+                                                                    {(listing?.fractionalShares?.availableShares || asset?.metadata?.availableShares || 0)}/{(listing?.fractionalShares?.totalShares || asset?.metadata?.totalShares || 0)}
                                                                 </Text>
                                                             </HStack>
                                                             <Progress
-                                                                value={(listing.fractionalShares.totalShares - listing.fractionalShares.availableShares) / listing.fractionalShares.totalShares * 100}
+                                                                value={((listing?.fractionalShares?.totalShares || asset?.metadata?.totalShares || 1) - (listing?.fractionalShares?.availableShares || asset?.metadata?.availableShares || 0)) / (listing?.fractionalShares?.totalShares || asset?.metadata?.totalShares || 1) * 100}
                                                                 colorScheme="purple"
                                                             />
                                                         </Box>
@@ -740,7 +900,7 @@ export function Token({ tokenId }: TokenProps) {
                                                             leftIcon={<FaCoins />}
                                                             isLoading={buyingAsset}
                                                             loadingText="Investing..."
-                                                            onClick={() => handleInvestInAsset(listing.fractionalShares!.pricePerShare)}
+                                                            onClick={() => handleInvestInAsset((listing?.fractionalShares?.pricePerShare || asset?.price || '0'))}
                                                         >
                                                             Buy 1 Share
                                                         </Button>
@@ -750,7 +910,7 @@ export function Token({ tokenId }: TokenProps) {
                                                         <HStack justify="space-between" w="full">
                                                             <Text fontWeight="600">Full Price</Text>
                                                             <Text fontSize="xl" fontWeight="700" color="purple.500">
-                                                                ${(parseInt(listing.price) / 100).toLocaleString()}
+                                                                ${(parseInt((listing?.price || asset?.price || '0')) / 100).toLocaleString()}
                                                             </Text>
                                                         </HStack>
                                                         <Button
@@ -769,16 +929,20 @@ export function Token({ tokenId }: TokenProps) {
                                             </>
                                         )}
 
-                                        {!isConnected && (
-                                            <Button
-                                                colorScheme="blue"
-                                                variant="outline"
-                                                size="lg"
-                                                w="full"
-                                                onClick={connect}
-                                            >
-                                                Connect Wallet
-                                            </Button>
+                                        {!listing && !asset?.isListed && (
+                                            <VStack spacing={4} w="full">
+                                                <Text textAlign="center" color="gray.500">
+                                                    This asset is not currently available for purchase
+                                                </Text>
+                                                <Button
+                                                    variant="outline"
+                                                    size="lg"
+                                                    w="full"
+                                                    isDisabled
+                                                >
+                                                    Not Available
+                                                </Button>
+                                            </VStack>
                                         )}
 
                                         {isConnected && assetDetails.ownership.yourShares > 0 && (
@@ -812,8 +976,8 @@ export function Token({ tokenId }: TokenProps) {
                                                 {asset.contractAddress.slice(0, 6)}...{asset.contractAddress.slice(-4)}
                                             </StatNumber>
                                             <StatHelpText>
-                                                <Link href={`https://explorer.sui.io/address/${asset.contractAddress}`} isExternal>
-                                                    View on Explorer <FaExternalLinkAlt />
+                                                <Link href={`https://suiexplorer.com/object/${asset.contractAddress}?network=testnet`} isExternal>
+                                                    View on Sui Explorer <FaExternalLinkAlt />
                                                 </Link>
                                             </StatHelpText>
                                         </Stat>

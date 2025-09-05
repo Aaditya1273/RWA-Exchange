@@ -39,6 +39,7 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
     isLoading,
     error,
     connect,
+    connectExtension,
     disconnect,
     createWallet,
     importWallet,
@@ -57,7 +58,7 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
 
   const toast = useToast();
 
-  const handleConnect = async () => {
+  const handleConnectExtension = async () => {
     setIsConnecting(true);
     setConnectionStep("Checking for wallet extension...");
     
@@ -69,7 +70,7 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
       await new Promise(resolve => setTimeout(resolve, 800));
       
       setConnectionStep("Connecting to OneChain network...");
-      await connect();
+      await connectExtension();
       
       setConnectionStep("Connection successful!");
       toast({
@@ -318,7 +319,7 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
                       width="full"
                       cursor="pointer"
                       _hover={{ borderColor: "blue.300", bg: "blue.100" }}
-                      onClick={handleConnect}
+                      onClick={handleConnectExtension}
                     >
                       <VStack spacing={2}>
                         <Text fontWeight="bold" color="blue.700">

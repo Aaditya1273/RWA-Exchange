@@ -14,6 +14,8 @@
     "deploy:onechain-testnet": "hardhat run scripts/deploy.ts --network onechain_testnet",
     "deploy:onechain-mainnet": "hardhat run scripts/deploy.ts --network onechain_mainnet",
     "deploy:onechain-simple": "node deploy-onechain.js",
+    "deploy:sui-testnet": "ts-node scripts/deploy-move.ts",
+    "deploy:onechain": "node scripts/deploy-onechain.js",
     "fund-wallet": "node fund-wallet.js",
     "update-addresses": "node update-addresses.js",
     "verify:onechain-testnet": "hardhat verify --network onechain_testnet",

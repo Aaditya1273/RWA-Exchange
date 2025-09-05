@@ -285,6 +285,78 @@ class OneChainService {
   }
 
   /**
+   * Get all properties from the blockchain
+   */
+  async getProperties(): Promise<any[]> {
+    try {
+      const packageId = process.env.NEXT_PUBLIC_RWA_PACKAGE_ID || '0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2';
+      
+      // Get all PropertyNFT objects
+      const objects = await this.suiClient.getOwnedObjects({
+        owner: packageId,
+        filter: {
+          StructType: `${packageId}::property_nft::PropertyNFT`
+        },
+        options: {
+          showContent: true,
+          showType: true,
+        },
+      });
+
+      return objects.data || [];
+    } catch (error) {
+      console.error('Failed to get properties:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get user's investments
+   */
+  async getUserInvestments(userAddress: string): Promise<any[]> {
+    try {
+      const packageId = process.env.NEXT_PUBLIC_RWA_PACKAGE_ID || '0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2';
+      
+      // Get all Investment objects owned by the user
+      const objects = await this.suiClient.getOwnedObjects({
+        owner: userAddress,
+        filter: {
+          StructType: `${packageId}::property_nft::Investment`
+        },
+        options: {
+          showContent: true,
+          showType: true,
+        },
+      });
+
+      return objects.data || [];
+    } catch (error) {
+      console.error('Failed to get user investments:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get property details by object ID
+   */
+  async getPropertyDetails(propertyId: string): Promise<any> {
+    try {
+      const object = await this.suiClient.getObject({
+        id: propertyId,
+        options: {
+          showContent: true,
+          showType: true,
+        },
+      });
+
+      return object;
+    } catch (error) {
+      console.error('Failed to get property details:', error);
+      return null;
+    }
+  }
+
+  /**
    * Create sponsored RWA investment transaction
    */
   async createSponsoredRWAInvestmentTransaction(

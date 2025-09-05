@@ -1,0 +1,10 @@
+[package]
+name = "rwa_exchange"
+version = "1.0.0"
+edition = "2024.beta"
+
+[dependencies]
+One = { git = "https://github.com/one-chain-labs/onechain.git", subdir = "crates/sui-framework/packages/one-framework", rev = "main" }
+
+[addresses]
+rwa_exchange = "0x0"

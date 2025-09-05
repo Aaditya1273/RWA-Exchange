@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { oneChainService } from '@/services/onechain';
 import { oneChainWalletStandardService } from '@/services/onechain-wallet-standard';
 import { NFT_CONTRACTS, NftContract } from '@/consts/nft_contracts';
+import { WalletSyncUtil } from '@/utils/walletSync';
 
 export interface MarketplaceAsset {
   id: string;
@@ -167,6 +168,15 @@ export default function MarketplaceProvider({
     }
   }, [contract]);
 
+  // Reload listings when assets change
+  useEffect(() => {
+    if (assets.length > 0) {
+      loadListings().catch(err => {
+        console.error('Failed to reload listings after assets change:', err);
+      });
+    }
+  }, [assets]);
+
   const loadInitialData = async () => {
     if (!contract) {
       setError('Contract not found');
@@ -177,11 +187,10 @@ export default function MarketplaceProvider({
     setError(null);
 
     try {
-      await Promise.all([
-        loadAssets(),
-        loadListings(),
-        loadTransactions()
-      ]);
+      // Load assets first, then listings (which depend on assets), then transactions
+      await loadAssets();
+      await loadListings();
+      await loadTransactions();
     } catch (err) {
       console.error('Failed to load initial marketplace data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load marketplace data');
@@ -197,55 +206,208 @@ export default function MarketplaceProvider({
     setError(null);
 
     try {
-      // For now, create mock data based on the contract
-      // In a real implementation, this would fetch from the blockchain
-      const mockAssets: MarketplaceAsset[] = [
+      // Get real properties from blockchain
+      const properties = await oneChainService.getProperties();
+      
+      const realAssets: MarketplaceAsset[] = await Promise.all(
+        properties.map(async (property, index) => {
+          try {
+            // Get property details
+            const details = await oneChainService.getPropertyDetails(property.data?.objectId);
+            const content = details?.data?.content;
+            
+            if (content?.fields) {
+              const fields = content.fields;
+              return {
+                id: property.data?.objectId || `${contractAddress}-${index}`,
+                contractAddress,
+                tokenId: property.data?.objectId || `${index + 1}`,
+                title: fields.name || `Property #${index + 1}`,
+                description: fields.description || 'Real-world asset tokenized on OneChain',
+                imageUrl: fields.image_url || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop',
+                price: fields.price_per_share?.toString() || '1000000000', // Price per share in MIST
+                currency: 'ONE',
+                owner: fields.owner || '0x0000000000000000000000000000000000000000',
+                isListed: fields.is_active || true,
+                assetType: 'property' as const,
+                metadata: {
+                  location: fields.location || 'OneChain Network',
+                  size: `${fields.total_shares || 1000} shares`,
+                  yearBuilt: 2024,
+                  appraisedValue: `${(parseInt(fields.total_value || '0') / 1e9).toLocaleString()} ONE`,
+                  rentalYield: fields.rental_yield || '8.5%',
+                  totalShares: fields.total_shares || 1000,
+                  availableShares: fields.available_shares || 1000,
+                  propertyType: fields.property_type || 'Real Estate'
+                }
+              };
+            }
+            
+            // Fallback for invalid property data
+            return {
+              id: property.data?.objectId || `${contractAddress}-${index}`,
+              contractAddress,
+              tokenId: property.data?.objectId || `${index + 1}`,
+              title: `Property #${index + 1}`,
+              description: 'Real-world asset tokenized on OneChain',
+              imageUrl: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop',
+              price: '1000000000', // 1 ONE in MIST
+              currency: 'ONE',
+              owner: '0x0000000000000000000000000000000000000000',
+              isListed: true,
+              assetType: 'property' as const,
+              metadata: {
+                location: 'OneChain Network',
+                size: '1000 shares',
+                yearBuilt: 2024,
+                appraisedValue: '1000 ONE',
+                rentalYield: '8.5%'
+              }
+            };
+          } catch (propertyError) {
+            console.error('Error processing property:', propertyError);
+            return null;
+          }
+        })
+      );
+
+      // Filter out null values and add some sample assets if no real ones exist
+      const validAssets = realAssets.filter(asset => asset !== null) as MarketplaceAsset[];
+      
+      if (validAssets.length === 0) {
+        // Add sample assets if no real properties exist
+        const sampleAssets: MarketplaceAsset[] = [
+          {
+            id: `${contractAddress}-sample-1`,
+            contractAddress,
+            tokenId: 'sample-1',
+            title: 'Luxury Downtown Condo',
+            description: 'Premium 2-bedroom condo in the heart of downtown with city views',
+            imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop',
+            price: '75000', // $750 per share
+            currency: 'USD',
+            owner: '0x0000000000000000000000000000000000000000',
+            isListed: true,
+            assetType: 'property',
+            metadata: {
+              location: 'Downtown District, Metro City',
+              size: '1000 shares',
+              yearBuilt: 2020,
+              appraisedValue: '750,000 USD',
+              rentalYield: '8.5%',
+              totalShares: 1000,
+              availableShares: 750,
+              propertyType: 'Residential Condo'
+            }
+          },
+          {
+            id: `${contractAddress}-sample-2`,
+            contractAddress,
+            tokenId: 'sample-2',
+            title: 'Modern Office Building',
+            description: 'Class A office building with premium tenants and stable income',
+            imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop',
+            price: '100000', // $1000 per share
+            currency: 'USD',
+            owner: '0x1111111111111111111111111111111111111111',
+            isListed: true,
+            assetType: 'property',
+            metadata: {
+              location: 'Business District, Metro City',
+              size: '2500 shares',
+              yearBuilt: 2021,
+              appraisedValue: '2,500,000 USD',
+              rentalYield: '12.0%',
+              totalShares: 2500,
+              availableShares: 2000,
+              propertyType: 'Commercial Office'
+            }
+          },
+          {
+            id: `${contractAddress}-sample-3`,
+            contractAddress,
+            tokenId: 'sample-3',
+            title: 'Suburban Family Home',
+            description: 'Beautiful 3-bedroom family home in quiet suburban neighborhood',
+            imageUrl: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=300&fit=crop',
+            price: '50000', // $500 per share
+            currency: 'USD',
+            owner: '0x2222222222222222222222222222222222222222',
+            isListed: true,
+            assetType: 'property',
+            metadata: {
+              location: 'Suburban Heights, Metro City',
+              size: '900 shares',
+              yearBuilt: 2018,
+              appraisedValue: '450,000 USD',
+              rentalYield: '6.8%',
+              totalShares: 900,
+              availableShares: 650,
+              propertyType: 'Single Family Home'
+            }
+          },
+          {
+            id: `${contractAddress}-sample-4`,
+            contractAddress,
+            tokenId: 'sample-4',
+            title: 'Renewable Energy Farm',
+            description: 'Solar energy farm with long-term power purchase agreements',
+            imageUrl: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=300&fit=crop',
+            price: '100000', // $1000 per share
+            currency: 'USD',
+            owner: '0x3333333333333333333333333333333333333333',
+            isListed: true,
+            assetType: 'property',
+            metadata: {
+              location: 'Green Valley, Renewable District',
+              size: '1200 shares',
+              yearBuilt: 2022,
+              appraisedValue: '1,200,000 USD',
+              rentalYield: '15.2%',
+              totalShares: 1200,
+              availableShares: 800,
+              propertyType: 'Infrastructure/Energy'
+            }
+          }
+        ];
+        
+        setAssets(sampleAssets);
+      } else {
+        setAssets(validAssets);
+      }
+      
+    } catch (err) {
+      console.error('Failed to load assets:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load assets');
+      
+      // Fallback to sample data on error
+      const fallbackAssets: MarketplaceAsset[] = [
         {
-          id: `${contractAddress}-1`,
+          id: `${contractAddress}-fallback-1`,
           contractAddress,
-          tokenId: '1',
-          title: contract.title || 'Premium Asset',
-          description: contract.description || 'High-quality tokenized real-world asset',
-          imageUrl: contract.thumbnailUrl || 'https://via.placeholder.com/400x300',
-          price: '100000', // $100 in cents
+          tokenId: 'fallback-1',
+          title: 'Sample Property Asset',
+          description: 'Sample tokenized real-world asset (blockchain connection failed)',
+          imageUrl: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop',
+          price: '75000', // $750 per share
           currency: 'USD',
           owner: '0x0000000000000000000000000000000000000000',
           isListed: true,
           assetType: 'property',
           metadata: {
-            location: 'Premium Location',
-            size: '2,500 sq ft',
-            yearBuilt: 2020,
-            appraisedValue: '$500,000',
-            rentalYield: '8.5%'
-          }
-        },
-        {
-          id: `${contractAddress}-2`,
-          contractAddress,
-          tokenId: '2',
-          title: `${contract.title} - Asset #2`,
-          description: 'Another premium tokenized asset with great potential',
-          imageUrl: contract.thumbnailUrl || 'https://via.placeholder.com/400x300',
-          price: '250000', // $250 in cents
-          currency: 'USD',
-          owner: '0x1111111111111111111111111111111111111111',
-          isListed: true,
-          assetType: 'art',
-          metadata: {
-            artist: 'Renowned Artist',
-            year: 2021,
-            medium: 'Oil on Canvas',
-            appraisedValue: '$750,000',
-            rentalYield: '12%'
+            location: 'Sample Location',
+            size: '1000 shares',
+            yearBuilt: 2024,
+            appraisedValue: '750,000 USD',
+            rentalYield: '8.5%',
+            totalShares: 1000,
+            availableShares: 750,
+            propertyType: 'Sample Property'
           }
         }
       ];
-
-      setAssets(mockAssets);
-    } catch (err) {
-      console.error('Failed to load assets:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load assets');
+      
+      setAssets(fallbackAssets);
     } finally {
       setIsLoadingAssets(false);
     }
@@ -258,34 +420,25 @@ export default function MarketplaceProvider({
     setError(null);
 
     try {
-      // Mock listings data
-      const mockListings: MarketplaceListing[] = [
-        {
-          id: `listing-${contractAddress}-1`,
-          assetId: `${contractAddress}-1`,
-          seller: '0x0000000000000000000000000000000000000000',
-          price: '100000',
-          currency: 'USD',
-          listingDate: new Date(Date.now() - 86400000), // 1 day ago
-          isActive: true,
-          fractionalShares: {
-            totalShares: 1000,
-            availableShares: 750,
-            pricePerShare: '100'
-          }
-        },
-        {
-          id: `listing-${contractAddress}-2`,
-          assetId: `${contractAddress}-2`,
-          seller: '0x1111111111111111111111111111111111111111',
-          price: '250000',
-          currency: 'USD',
-          listingDate: new Date(Date.now() - 172800000), // 2 days ago
-          isActive: true
-        }
-      ];
+      // Create listings for all available assets
+      const activeListings: MarketplaceListing[] = assets.map((asset, index) => ({
+        id: `listing-${asset.id}`,
+        assetId: asset.id,
+        seller: asset.owner,
+        price: asset.metadata.totalShares ? 
+          (parseInt(asset.price) * asset.metadata.totalShares).toString() : 
+          asset.price,
+        currency: asset.currency,
+        listingDate: new Date(Date.now() - (index + 1) * 86400000), // Staggered dates
+        isActive: asset.isListed,
+        fractionalShares: asset.metadata.totalShares ? {
+          totalShares: asset.metadata.totalShares,
+          availableShares: asset.metadata.availableShares || asset.metadata.totalShares,
+          pricePerShare: asset.price
+        } : undefined
+      }));
 
-      setListings(mockListings);
+      setListings(activeListings);
     } catch (err) {
       console.error('Failed to load listings:', err);
       setError(err instanceof Error ? err.message : 'Failed to load listings');
@@ -323,9 +476,13 @@ export default function MarketplaceProvider({
 
   const buyAsset = async (assetId: string, price: string): Promise<string> => {
     try {
-      // Check if wallet is connected
-      if (!oneChainWalletStandardService.isConnected()) {
-        throw new Error('Wallet not connected');
+      console.log('buyAsset called with:', { assetId, price, contractAddress });
+      
+      // Use wallet sync utility for robust connection validation
+      const validation = await WalletSyncUtil.validateConnectionForTransaction();
+      
+      if (!validation.isValid) {
+        throw new Error(validation.error || 'Wallet not connected');
       }
 
       const asset = getAssetById(assetId);
@@ -333,20 +490,25 @@ export default function MarketplaceProvider({
         throw new Error('Asset not found');
       }
 
-      const connectedAccount = oneChainWalletStandardService.getConnectedAccount();
-      if (!connectedAccount) {
-        throw new Error('No connected account found');
-      }
+      console.log('Creating transaction with params:', {
+        investor: validation.account.address,
+        projectAddress: asset.id, // Use asset ID instead of contract address
+        amount: price
+      });
 
       // Create buy transaction
       const tx = await oneChainService.createRWAInvestmentTransaction(
-        connectedAccount.address,
-        contractAddress,
-        price
+        validation.account.address, // investor - the buyer's address
+        asset.id,                  // projectAddress - the specific asset ID
+        price                     // amount - the investment amount
       );
+
+      console.log('Transaction created, executing...');
 
       // Execute transaction
       const result = await oneChainService.signAndExecuteTransaction(tx);
+
+      console.log('Transaction executed:', result);
 
       // Refresh data after successful transaction
       await refresh();
@@ -359,7 +521,11 @@ export default function MarketplaceProvider({
   };
 
   const sellAsset = async (assetId: string, price: string): Promise<string> => {
-    if (!oneChainWalletStandardService.isConnected()) {
+    // Enhanced wallet connection check
+    const isWalletConnected = oneChainWalletStandardService.isConnected();
+    const connectedAccount = oneChainWalletStandardService.getConnectedAccount();
+    
+    if (!isWalletConnected || !connectedAccount) {
       throw new Error('Wallet not connected');
     }
 
@@ -379,7 +545,11 @@ export default function MarketplaceProvider({
   };
 
   const listAsset = async (assetId: string, price: string, fractionalShares?: number): Promise<string> => {
-    if (!oneChainWalletStandardService.isConnected()) {
+    // Enhanced wallet connection check
+    const isWalletConnected = oneChainWalletStandardService.isConnected();
+    const connectedAccount = oneChainWalletStandardService.getConnectedAccount();
+    
+    if (!isWalletConnected || !connectedAccount) {
       throw new Error('Wallet not connected');
     }
 
@@ -398,7 +568,11 @@ export default function MarketplaceProvider({
   };
 
   const delistAsset = async (listingId: string): Promise<string> => {
-    if (!oneChainWalletStandardService.isConnected()) {
+    // Enhanced wallet connection check
+    const isWalletConnected = oneChainWalletStandardService.isConnected();
+    const connectedAccount = oneChainWalletStandardService.getConnectedAccount();
+    
+    if (!isWalletConnected || !connectedAccount) {
       throw new Error('Wallet not connected');
     }
 
@@ -422,18 +596,17 @@ export default function MarketplaceProvider({
 
   const claimDividends = async (assetId: string): Promise<string> => {
     try {
-      if (!oneChainWalletStandardService.isConnected()) {
+      // Enhanced wallet connection check
+      const isWalletConnected = oneChainWalletStandardService.isConnected();
+      const connectedAccount = oneChainWalletStandardService.getConnectedAccount();
+      
+      if (!isWalletConnected || !connectedAccount) {
         throw new Error('Wallet not connected');
       }
 
       const asset = getAssetById(assetId);
       if (!asset) {
         throw new Error('Asset not found');
-      }
-
-      const connectedAccount = oneChainWalletStandardService.getConnectedAccount();
-      if (!connectedAccount) {
-        throw new Error('No connected account found');
       }
 
       // Create dividend claim transaction
