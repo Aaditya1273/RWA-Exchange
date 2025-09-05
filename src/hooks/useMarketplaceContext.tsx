@@ -510,8 +510,64 @@ export default function MarketplaceProvider({
 
       console.log('Transaction executed:', result);
 
-      // Refresh data after successful transaction
-      await refresh();
+      // Track the investment locally for profile display
+      try {
+        const { investmentTracker } = await import('@/services/investmentTracker');
+        
+        // Calculate shares purchased (assuming price is per share in cents)
+        const pricePerShare = parseInt(price);
+        const sharesPurchased = 1; // For now, assume 1 share per purchase
+        
+        investmentTracker.addInvestment({
+          assetId: asset.id,
+          assetName: asset.title,
+          sharesOwned: sharesPurchased,
+          investmentAmount: pricePerShare * sharesPurchased,
+          pricePerShare: pricePerShare,
+          transactionHash: result.digest || result.transactionBlockDigest || 'demo-tx-' + Date.now(),
+          imageUrl: asset.imageUrl,
+          rentalYield: asset.metadata.rentalYield || '8.5%',
+          userAddress: validation.account.address
+        });
+
+        console.log('Investment tracked locally for user:', validation.account.address);
+      } catch (trackingError) {
+        console.error('Failed to track investment locally:', trackingError);
+        // Don't fail the transaction if tracking fails
+      }
+
+      // Update available shares locally for immediate UI feedback
+      const updatedAssets = assets.map(a => {
+        if (a.id === assetId && a.metadata.availableShares) {
+          return {
+            ...a,
+            metadata: {
+              ...a.metadata,
+              availableShares: Math.max(0, a.metadata.availableShares - 1)
+            }
+          };
+        }
+        return a;
+      });
+      setAssets(updatedAssets);
+
+      // Update listings as well
+      const updatedListings = listings.map(l => {
+        if (l.assetId === assetId && l.fractionalShares) {
+          return {
+            ...l,
+            fractionalShares: {
+              ...l.fractionalShares,
+              availableShares: Math.max(0, l.fractionalShares.availableShares - 1)
+            }
+          };
+        }
+        return l;
+      });
+      setListings(updatedListings);
+
+      // Refresh data after successful transaction (in background)
+      setTimeout(() => refresh(), 2000);
 
       return result.digest || result.transactionBlockDigest || 'transaction-completed';
     } catch (err) {

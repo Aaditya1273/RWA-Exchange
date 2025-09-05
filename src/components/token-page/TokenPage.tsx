@@ -96,6 +96,24 @@ export function Token({ tokenId }: TokenProps) {
     const { isConnected, connect, account, checkConnectionState } = useWalletStandard();
     const toast = useToast();
 
+    // Refresh wallet connection state on component mount and periodically
+    useEffect(() => {
+        const refreshConnection = async () => {
+            try {
+                await checkConnectionState();
+            } catch (error) {
+                console.warn('Failed to refresh wallet connection state:', error);
+            }
+        };
+
+        refreshConnection();
+        
+        // Set up periodic refresh every 2 seconds to keep connection state in sync
+        const interval = setInterval(refreshConnection, 2000);
+        
+        return () => clearInterval(interval);
+    }, [checkConnectionState]);
+
     const [buyingAsset, setBuyingAsset] = useState(false);
     const [claimingDividends, setClaimingDividends] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
@@ -169,17 +187,16 @@ export function Token({ tokenId }: TokenProps) {
         setBuyingAsset(true);
         
         try {
-            // Validate wallet connection using the sync utility
-            const validation = await WalletSyncUtil.validateConnectionForTransaction();
-            
-            if (!validation.isValid) {
+            // Simple wallet connection check first
+            if (!isConnected || !account) {
                 toast({
-                    title: "Purchase failed",
-                    description: validation.error || "Wallet not connected",
-                    status: "error",
-                    duration: validation.error?.includes('does not support') ? 8000 : 3000,
+                    title: "Wallet not connected",
+                    description: "Please connect your wallet to make a purchase",
+                    status: "warning",
+                    duration: 3000,
                     isClosable: true,
                 });
+                await connect();
                 return;
             }
 
@@ -188,6 +205,12 @@ export function Token({ tokenId }: TokenProps) {
             setShowTransactionSuccess(true);
             // Auto-hide after 30 seconds
             setTimeout(() => setShowTransactionSuccess(false), 30000);
+            
+            // Update available shares locally for immediate UI feedback
+            if (listing.fractionalShares) {
+                listing.fractionalShares.availableShares -= 1;
+            }
+            
             toast({
                 title: "Purchase successful!",
                 description: `Asset purchased successfully! View transaction details below.`,
@@ -196,13 +219,16 @@ export function Token({ tokenId }: TokenProps) {
                 isClosable: true,
             });
         } catch (error) {
-            toast({
-                title: "Purchase failed",
-                description: error instanceof Error ? error.message : "Unknown error occurred",
-                status: "error",
-                duration: 5000,
-                isClosable: true,
-            });
+            // Only show error if it's not a user rejection
+            if (error instanceof Error && !error.message.toLowerCase().includes('reject')) {
+                toast({
+                    title: "Purchase failed",
+                    description: error.message,
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                });
+            }
         } finally {
             setBuyingAsset(false);
         }
@@ -214,17 +240,16 @@ export function Token({ tokenId }: TokenProps) {
         setBuyingAsset(true);
         
         try {
-            // Validate wallet connection using the sync utility
-            const validation = await WalletSyncUtil.validateConnectionForTransaction();
-            
-            if (!validation.isValid) {
+            // Simple wallet connection check first
+            if (!isConnected || !account) {
                 toast({
-                    title: "Investment failed",
-                    description: validation.error || "Wallet not connected",
-                    status: "error",
-                    duration: validation.error?.includes('does not support') ? 8000 : 3000,
+                    title: "Wallet not connected",
+                    description: "Please connect your wallet to invest",
+                    status: "warning",
+                    duration: 3000,
                     isClosable: true,
                 });
+                await connect();
                 return;
             }
 
@@ -233,6 +258,14 @@ export function Token({ tokenId }: TokenProps) {
             setShowTransactionSuccess(true);
             // Auto-hide after 30 seconds
             setTimeout(() => setShowTransactionSuccess(false), 30000);
+            
+            // Update available shares locally for immediate UI feedback
+            if (listing?.fractionalShares) {
+                listing.fractionalShares.availableShares -= 1;
+            } else if (asset.metadata.availableShares) {
+                asset.metadata.availableShares -= 1;
+            }
+            
             toast({
                 title: "Investment successful!",
                 description: `Investment completed successfully! View transaction details below.`,
@@ -241,13 +274,16 @@ export function Token({ tokenId }: TokenProps) {
                 isClosable: true,
             });
         } catch (error) {
-            toast({
-                title: "Investment failed",
-                description: error instanceof Error ? error.message : "Unknown error occurred",
-                status: "error",
-                duration: 5000,
-                isClosable: true,
-            });
+            // Only show error if it's not a user rejection
+            if (error instanceof Error && !error.message.toLowerCase().includes('reject')) {
+                toast({
+                    title: "Investment failed",
+                    description: error.message,
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                });
+            }
         } finally {
             setBuyingAsset(false);
         }
@@ -871,7 +907,7 @@ export function Token({ tokenId }: TokenProps) {
                                 </CardHeader>
                                 <CardBody>
                                     <VStack spacing={6}>
-                                        {(listing || asset?.isListed) && (
+                                        {(listing || asset?.isListed) ? (
                                             <>
                                                 {(listing?.fractionalShares || asset?.metadata?.totalShares) ? (
                                                     <VStack spacing={4} w="full">
@@ -927,9 +963,7 @@ export function Token({ tokenId }: TokenProps) {
                                                     </VStack>
                                                 )}
                                             </>
-                                        )}
-
-                                        {!listing && !asset?.isListed && (
+                                        ) : (
                                             <VStack spacing={4} w="full">
                                                 <Text textAlign="center" color="gray.500">
                                                     This asset is not currently available for purchase

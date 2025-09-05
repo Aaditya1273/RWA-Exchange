@@ -73,102 +73,70 @@ export function ProfileSection({ address }: Props) {
     }
   }, [address, isConnected]);
 
+  // Refresh investments when component becomes visible (user navigates back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && address && isConnected) {
+        console.log('Page became visible, refreshing investments...');
+        loadUserInvestments();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [address, isConnected]);
+
   const loadUserInvestments = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Get user's investments from blockchain
-      const userInvestments = await oneChainService.getUserInvestments(address);
+      // Get user's investments from local tracking
+      const { investmentTracker } = await import('@/services/investmentTracker');
+      const userInvestments = investmentTracker.getUserInvestments(address);
       
-      const processedInvestments: Investment[] = await Promise.all(
-        userInvestments.map(async (investment, index) => {
-          try {
-            const content = investment.data?.content;
-            if (content?.fields) {
-              const fields = content.fields;
-              
-              // Get property details
-              const propertyDetails = await oneChainService.getPropertyDetails(fields.property_id);
-              const propertyContent = propertyDetails?.data?.content;
-              
-              return {
-                id: investment.data?.objectId || `investment-${index}`,
-                propertyId: fields.property_id || '',
-                propertyName: propertyContent?.fields?.name || `Property #${index + 1}`,
-                sharesOwned: parseInt(fields.shares_owned || '0'),
-                investmentAmount: parseInt(fields.investment_amount || '0') / 1e9, // Convert from MIST to ONE
-                timestamp: parseInt(fields.timestamp || '0'),
-                imageUrl: propertyContent?.fields?.image_url || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop',
-                currentValue: (parseInt(fields.shares_owned || '0') * parseInt(propertyContent?.fields?.price_per_share || '0')) / 1e9,
-                rentalYield: propertyContent?.fields?.rental_yield || '8.5%'
-              };
-            }
-            
-            return null;
-          } catch (err) {
-            console.error('Error processing investment:', err);
-            return null;
-          }
-        })
-      );
-
-      const validInvestments = processedInvestments.filter(inv => inv !== null) as Investment[];
+      console.log('Loading investments for user:', address);
+      console.log('Found investments:', userInvestments);
       
-      // If no real investments, show sample data for demo
-      if (validInvestments.length === 0) {
-        const sampleInvestments: Investment[] = [
-          {
-            id: 'sample-1',
-            propertyId: 'sample-property-1',
-            propertyName: 'Luxury Downtown Condo',
-            sharesOwned: 50,
-            investmentAmount: 37.5, // 50 shares * 0.75 ONE per share
-            timestamp: Date.now() - 86400000, // 1 day ago
-            imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop',
-            currentValue: 40.0, // Slight appreciation
-            rentalYield: '8.5%'
-          },
-          {
-            id: 'sample-2',
-            propertyId: 'sample-property-2',
-            propertyName: 'Modern Office Building',
-            sharesOwned: 25,
-            investmentAmount: 25.0, // 25 shares * 1 ONE per share
-            timestamp: Date.now() - 172800000, // 2 days ago
-            imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop',
-            currentValue: 26.5, // Good appreciation
-            rentalYield: '12.0%'
-          }
-        ];
+      // Convert tracked investments to profile format
+      const trackedInvestments: Investment[] = userInvestments.map(inv => ({
+        id: inv.id,
+        propertyId: inv.assetId,
+        propertyName: inv.assetName,
+        sharesOwned: inv.sharesOwned,
+        investmentAmount: inv.investmentAmount / 100, // Convert cents to dollars
+        timestamp: inv.timestamp,
+        imageUrl: inv.imageUrl,
+        currentValue: (inv.sharesOwned * inv.pricePerShare) / 100, // Convert cents to dollars
+        rentalYield: inv.rentalYield
+      }));
+      
+      // If user has tracked investments, use them
+      if (trackedInvestments.length > 0) {
+        setInvestments(trackedInvestments);
         
-        setInvestments(sampleInvestments);
-        
-        // Calculate sample portfolio stats
-        const totalValue = sampleInvestments.reduce((sum, inv) => sum + inv.currentValue, 0);
-        const totalShares = sampleInvestments.reduce((sum, inv) => sum + inv.sharesOwned, 0);
-        const avgYield = sampleInvestments.reduce((sum, inv) => sum + parseFloat(inv.rentalYield), 0) / sampleInvestments.length;
-        
+        // Calculate portfolio stats from tracked investments
+        const stats = investmentTracker.getUserPortfolioStats(address);
         setPortfolioStats({
-          totalInvestments: sampleInvestments.length,
-          totalValue,
-          totalShares,
-          averageYield: avgYield
+          totalInvestments: stats.totalInvestments,
+          totalValue: stats.totalValue,
+          totalShares: stats.totalShares,
+          averageYield: stats.averageYield
         });
+        
+        console.log('Loaded', trackedInvestments.length, 'tracked investments');
       } else {
-        setInvestments(validInvestments);
-        
-        // Calculate real portfolio stats
-        const totalValue = validInvestments.reduce((sum, inv) => sum + inv.currentValue, 0);
-        const totalShares = validInvestments.reduce((sum, inv) => sum + inv.sharesOwned, 0);
-        const avgYield = validInvestments.reduce((sum, inv) => sum + parseFloat(inv.rentalYield), 0) / validInvestments.length;
-        
+        // If no tracked investments, show sample data for demo
+        // Show empty state for new users
+        setInvestments([]);
         setPortfolioStats({
-          totalInvestments: validInvestments.length,
-          totalValue,
-          totalShares,
-          averageYield: avgYield
+          totalInvestments: 0,
+          totalValue: 0,
+          totalShares: 0,
+          averageYield: 0
         });
+        
+        console.log('No investments found for user');
       }
       
     } catch (err) {
@@ -184,7 +152,7 @@ export function ProfileSection({ address }: Props) {
   };
 
   const formatCurrency = (amount: number) => {
-    return `${amount.toFixed(2)} ONE`;
+    return `$${amount.toFixed(2)}`;
   };
 
   return (
