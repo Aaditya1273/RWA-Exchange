@@ -250,6 +250,79 @@ module rwa_exchange::property_nft {
         property.is_active = is_active;
     }
 
+    // ===== Secondary Trading Functions =====
+
+    /// Transfer investment shares to another address
+    public entry fun transfer_investment(
+        investment: Investment,
+        recipient: address,
+        _ctx: &mut TxContext
+    ) {
+        // Simply transfer the Investment object to the new owner
+        // The Investment object represents ownership of shares
+        transfer::transfer(investment, recipient);
+    }
+
+    /// List investment for sale (creates a listing)
+    public entry fun list_investment_for_sale(
+        investment: &Investment,
+        price: u64,
+        ctx: &mut TxContext
+    ) {
+        assert!(investment.investor == tx_context::sender(ctx), ENotOwner);
+        
+        // Emit listing event
+        event::emit(InvestmentListed {
+            investment_id: object::uid_to_address(&investment.id),
+            seller: investment.investor,
+            shares: investment.shares_owned,
+            asking_price: price,
+        });
+    }
+
+    /// Buy listed investment shares
+    public entry fun buy_listed_investment(
+        investment: Investment,
+        payment: Coin<ONE>,
+        seller: address,
+        ctx: &mut TxContext
+    ) {
+        let buyer = tx_context::sender(ctx);
+        let payment_amount = coin::value(&payment);
+        
+        // Transfer payment to seller
+        transfer::public_transfer(payment, seller);
+        
+        // Transfer investment to buyer
+        transfer::transfer(investment, buyer);
+        
+        // Emit trade event
+        event::emit(InvestmentTraded {
+            investment_id: object::uid_to_address(&investment.id),
+            seller,
+            buyer,
+            shares: investment.shares_owned,
+            price: payment_amount,
+        });
+    }
+
+    // ===== Events for Secondary Trading =====
+
+    public struct InvestmentListed has copy, drop {
+        investment_id: address,
+        seller: address,
+        shares: u64,
+        asking_price: u64,
+    }
+
+    public struct InvestmentTraded has copy, drop {
+        investment_id: address,
+        seller: address,
+        buyer: address,
+        shares: u64,
+        price: u64,
+    }
+
     // ===== View Functions =====
 
     /// Get property details

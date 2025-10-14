@@ -25,8 +25,12 @@ import {
 } from "@chakra-ui/react";
 import { keyframes } from "@emotion/react";
 import { FaArrowRight, FaSearch, FaFilter, FaShoppingCart, FaEye } from "react-icons/fa";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { WalletGuard } from "@/components/WalletGuard";
+import { InvestmentModal } from "@/components/InvestmentModal";
+import { useDisclosure } from "@chakra-ui/react";
+import { propertyContractService } from "@/services/propertyContract";
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
@@ -52,19 +56,53 @@ const shimmer = keyframes`
 export default function CollectionPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedProperty, setSelectedProperty] = useState<any>(null);
+  const [blockchainProperties, setBlockchainProperties] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [useBlockchainData, setUseBlockchainData] = useState(false);
   
   const cardBg = useColorModeValue("white", "gray.800");
   const textColor = useColorModeValue("gray.600", "gray.300");
   const borderColor = useColorModeValue("gray.200", "gray.600");
 
-  const filteredContracts = NFT_CONTRACTS.filter(item => {
-    const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  // Fetch properties from blockchain
+  useEffect(() => {
+    const fetchProperties = async () => {
+      setIsLoading(true);
+      try {
+        const properties = await propertyContractService.getAllProperties();
+        if (properties.length > 0) {
+          setBlockchainProperties(properties);
+          setUseBlockchainData(true);
+        }
+      } catch (error) {
+        console.error('Error fetching blockchain properties:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
+  const handleInvestClick = (item: any) => {
+    setSelectedProperty(item);
+    onOpen();
+  };
+
+  // Use blockchain data if available, otherwise use mock data
+  const dataSource = useBlockchainData ? blockchainProperties : NFT_CONTRACTS;
+
+  const filteredContracts = dataSource.filter(item => {
+    const matchesSearch = (item.title || item.name)?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          item.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === "all" || item.type === filterType;
     return matchesSearch && matchesType;
   });
 
   return (
+    <WalletGuard requireWallet={true}>
     <Container maxW="7xl" py={8}>
       {/* Enhanced Header */}
       <MotionBox
@@ -158,10 +196,20 @@ export default function CollectionPage() {
         </Box>
       </MotionBox>
 
-      {/* Results Count */}
-      <Text mb={6} color={textColor}>
-        Showing {filteredContracts.length} of {NFT_CONTRACTS.length} assets
-      </Text>
+      {/* Results Count & Data Source */}
+      <HStack justify="space-between" mb={6}>
+        <Text color={textColor}>
+          Showing {filteredContracts.length} of {dataSource.length} assets
+        </Text>
+        <Badge 
+          colorScheme={useBlockchainData ? "green" : "gray"} 
+          fontSize="sm"
+          px={3}
+          py={1}
+        >
+          {isLoading ? "Loading..." : useBlockchainData ? "🔗 Live Blockchain Data" : "📦 Demo Data"}
+        </Badge>
+      </HStack>
 
       {/* Enhanced Asset Grid */}
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={8}>
@@ -245,7 +293,7 @@ export default function CollectionPage() {
                   fontFamily="Outfit"
                   fontWeight="700"
                 >
-                  {item.title}
+                  {item.title || item.name}
                 </Heading>
                 
                 <Text 
@@ -294,8 +342,7 @@ export default function CollectionPage() {
                       Details
                     </Button>
                     <Button
-                      as={Link}
-                      href={`/collection/${item.chain?.id?.toString() || 'default'}/${item.address}?action=buy`}
+                      onClick={() => handleInvestClick(item)}
                       size="sm"
                       colorScheme="purple"
                       flex={1}
@@ -359,6 +406,20 @@ export default function CollectionPage() {
           </Button>
         </VStack>
       </Box>
+
+      {/* Investment Modal */}
+      {selectedProperty && (
+        <InvestmentModal
+          isOpen={isOpen}
+          onClose={onClose}
+          propertyId={selectedProperty.address}
+          propertyName={selectedProperty.title || "Property"}
+          pricePerShare={100}
+          availableShares={9900}
+          totalShares={10000}
+        />
+      )}
     </Container>
+    </WalletGuard>
   );
 }

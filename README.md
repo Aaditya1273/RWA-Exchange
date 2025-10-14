@@ -238,7 +238,175 @@ flowchart TD
   J --> K
 ```
 
-## Getting Started
+## 🚀 Quick Start - OneChain Testnet
+
+### Prerequisites
+- Node.js 18+ and npm installed
+- Sui CLI installed (for Move contract deployment)
+- OneChain testnet wallet with ONE tokens
+
+### Deploy and Run in 5 Minutes
+
+#### 1. Clone and Install
+```bash
+git clone https://github.com/Aaditya1273/RWA-Exchange.git
+cd RWA-Exchange
+npm install
+```
+
+#### 2. Configure Environment
+```bash
+cp .env.example .env.local
+# Edit .env.local with your configuration
+```
+
+Required environment variables:
+```env
+# OneChain Configuration
+NEXT_PUBLIC_ONECHAIN_RPC_URL=https://rpc-testnet.onelabs.cc:443
+NEXT_PUBLIC_ONECHAIN_NETWORK=testnet
+```
+
+#### 3. Deploy Move Package (If Needed)
+```bash
+# Build Move package
+sui move build
+
+# Deploy to OneChain testnet
+sui client publish --gas-budget 100000000
+
+# Save the Package ID from output
+```
+
+**Existing Package ID**: `0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2`
+
+#### 4. Create a Property NFT
+```bash
+sui client call \
+  --package 0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2 \
+  --module property_nft \
+  --function create_property \
+  --args "Sunset Villa Estate" "Luxury beachfront property" \
+         "https://example.com/villa.jpg" "Miami Beach, FL" \
+         "Residential" 1000000 10000 100 "8.5%" \
+  --gas-budget 10000000
+```
+
+#### 5. Invest in Property (Fractionalization)
+```bash
+sui client call \
+  --package 0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2 \
+  --module property_nft \
+  --function invest \
+  --args [PROPERTY_OBJECT_ID] [COIN_OBJECT_ID] 100 \
+  --gas-budget 10000000
+```
+
+#### 6. Run Frontend
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to view the marketplace.
+
+### Verify Deployment
+- **Package Explorer**: https://testnet-explorer.onechain.network/object/0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2
+- **Check Objects**: `sui client objects`
+- **View Transaction**: `sui client tx-block [TX_HASH]`
+
+---
+
+## ⚠️ Feature Caveats & Limitations
+
+### Current Limitations
+
+#### Testnet Only
+- ⚠️ **Not Audited**: Smart contracts have not been professionally audited
+- ⚠️ **Demo Purpose**: This is a hackathon/demo project, not production-ready
+- ⚠️ **No Real Funds**: Do not use with real money on mainnet
+
+#### Technical Limitations
+- **Balance Fetching**: Using type assertion workaround instead of proper SuiClient implementation
+- **Wallet Import**: Private key import functionality not fully implemented
+- **Transaction Confirmation**: May take 5-10 seconds for finality
+- **RPC Timeouts**: OneChain RPC may occasionally timeout, retry if needed
+
+#### Feature Gaps
+- **Dividend Distribution**: Manual process, not automated
+- **KYC Integration**: Placeholder only, not enforced in current version
+- **Secondary Market**: Fraction trading not yet implemented
+- **Multi-signature**: Property management requires single owner only
+- **Mobile Wallet**: Limited mobile wallet support
+
+### Known Issues
+
+#### Frontend
+- Balance refresh requires manual trigger
+- Some wallet connections may require page refresh
+- Explorer links may not work if testnet is down
+
+#### Smart Contracts
+- PropertyCap must be held to manage property
+- No refund mechanism if property sale fails
+- Dividend calculation is simplified (no time-weighting)
+- Treasury management is basic (no yield generation)
+
+#### Network
+- OneChain testnet may have occasional downtime
+- Gas estimation may be inaccurate
+- Event indexing may lag behind transactions
+
+### Security Disclaimers
+
+⚠️ **IMPORTANT SECURITY WARNINGS**:
+
+1. **Private Keys**: Currently stored in localStorage (NOT production-ready)
+2. **No Audit**: Smart contracts have not been audited by security professionals
+3. **Test Tokens Only**: Only use testnet ONE tokens, never mainnet funds
+4. **No Insurance**: No protection against bugs or exploits
+5. **Experimental**: This is experimental software, use at your own risk
+
+### Recommended Use Cases
+
+✅ **Good For**:
+- Learning about RWA tokenization
+- Testing fractional ownership concepts
+- Demonstrating blockchain use cases
+- Hackathon submissions
+- Educational purposes
+
+❌ **Not Suitable For**:
+- Production deployments
+- Real financial transactions
+- Storing valuable assets
+- Regulatory compliance
+- Enterprise use without modifications
+
+### Future Improvements
+
+**Planned Enhancements**:
+- Professional security audit
+- Automated dividend distribution
+- Real KYC/AML integration
+- Secondary marketplace for fractions
+- Multi-signature property management
+- Mobile app support
+- Advanced analytics dashboard
+- Integration with real estate APIs
+- Regulatory compliance features
+- Insurance mechanisms
+
+### Getting Help
+
+If you encounter issues:
+1. Check the [Troubleshooting](#troubleshooting) section below
+2. Review [ONECHAIN_INTEGRATION.md](./ONECHAIN_INTEGRATION.md)
+3. Visit OneChain documentation: https://docs.onechain.network
+4. Open an issue on GitHub
+
+---
+
+## Getting Started (Alternative Method)
 
 ### 1. Install Dependencies
 ```bash

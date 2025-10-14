@@ -58,11 +58,17 @@ export function Navbar() {
             <Link href="/landing" _hover={{ textDecoration: "none" }}>
               <Text fontWeight="medium" fontSize="sm">About</Text>
             </Link>
-            <Link href="/dashboard" _hover={{ textDecoration: "none" }}>
-              <Text fontWeight="medium" fontSize="sm">Dashboard</Text>
+            <Link href="/create-property" _hover={{ textDecoration: "none" }}>
+              <Text fontWeight="medium" fontSize="sm" color="purple.500">Create Property</Text>
             </Link>
             <Link href="/collection" _hover={{ textDecoration: "none" }}>
               <Text fontWeight="medium" fontSize="sm">Marketplace</Text>
+            </Link>
+            <Link href="/my-investments" _hover={{ textDecoration: "none" }}>
+              <Text fontWeight="medium" fontSize="sm" color="green.500">My Investments</Text>
+            </Link>
+            <Link href="/dashboard" _hover={{ textDecoration: "none" }}>
+              <Text fontWeight="medium" fontSize="sm">Dashboard</Text>
             </Link>
           </HStack>
 

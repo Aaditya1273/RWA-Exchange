@@ -21,10 +21,20 @@ import {
   StatNumber,
   Card,
   CardBody,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "@chakra-ui/react";
 import { keyframes } from "@emotion/react";
 import { FaArrowRight, FaChartLine, FaGlobe, FaShieldAlt, FaStar, FaArrowUp } from "react-icons/fa";
+import { FiAlertCircle } from "react-icons/fi";
 import { motion } from "framer-motion";
+import { useOneChainWallet } from "@/hooks/useOneChainWallet";
+import { useRouter } from "next/navigation";
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
@@ -47,6 +57,24 @@ const shimmer = keyframes`
 `;
 
 export default function Home() {
+  const { isConnected } = useOneChainWallet();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const router = useRouter();
+
+  const handleAssetClick = (e: React.MouseEvent, path: string) => {
+    if (!isConnected) {
+      e.preventDefault();
+      onOpen();
+    } else {
+      router.push(path);
+    }
+  };
+
+  const handleConnectAndRedirect = () => {
+    onClose();
+    router.push("/collection");
+  };
+
   const gradient = useColorModeValue(
     "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)"
@@ -382,8 +410,7 @@ export default function Home() {
                   
                   <HStack spacing={3} w="full" pt={2}>
                     <Button
-                      as={Link}
-                      href={`/collection/${item.chain?.id?.toString() || 'default'}/${item.address}`}
+                      onClick={(e) => handleAssetClick(e, `/collection/${item.chain?.id?.toString() || 'default'}/${item.address}`)}
                       size="sm"
                       variant="outline"
                       colorScheme="purple"
@@ -394,8 +421,7 @@ export default function Home() {
                       View Details
                     </Button>
                     <Button
-                      as={Link}
-                      href={`/collection/${item.chain?.id?.toString() || 'default'}/${item.address}?action=buy`}
+                      onClick={(e) => handleAssetClick(e, `/collection/${item.chain?.id?.toString() || 'default'}/${item.address}?action=buy`)}
                       size="sm"
                       colorScheme="purple"
                       flex={1}
@@ -441,6 +467,47 @@ export default function Home() {
           </Flex>
         </MotionBox>
       </Container>
+
+      {/* Wallet Connection Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+        <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(10px)" />
+        <ModalContent>
+          <ModalHeader>
+            <VStack spacing={3}>
+              <Icon as={FiAlertCircle} boxSize={12} color="purple.500" />
+              <Text>Connect Wallet to Continue</Text>
+            </VStack>
+          </ModalHeader>
+          <ModalBody>
+            <VStack spacing={4} textAlign="center">
+              <Text color="gray.600">
+                You need to connect your OneChain wallet to view asset details and make investments.
+              </Text>
+              <Text fontSize="sm" color="gray.500">
+                Connect your wallet to explore premium tokenized real-world assets.
+              </Text>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <VStack spacing={3} width="full">
+              <Button
+                colorScheme="purple"
+                width="full"
+                onClick={handleConnectAndRedirect}
+              >
+                Go to Marketplace & Connect
+              </Button>
+              <Button
+                variant="ghost"
+                width="full"
+                onClick={onClose}
+              >
+                Cancel
+              </Button>
+            </VStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }

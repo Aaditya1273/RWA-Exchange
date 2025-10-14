@@ -23,7 +23,7 @@ import {
   Alert,
   AlertIcon,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiCopy, FiRefreshCw, FiSend } from "react-icons/fi";
 import { useOneChainWallet } from "@/hooks/useOneChainWallet";
 
@@ -254,10 +254,18 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" {...({} as any)}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>OneChain Wallet</ModalHeader>
-        <ModalCloseButton />
+      <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
+      <ModalContent bg="white" borderRadius="xl" boxShadow="2xl">
+        <ModalHeader 
+          fontSize="xl" 
+          fontWeight="bold" 
+          color="gray.800"
+          borderBottomWidth={1}
+          borderColor="gray.200"
+        >
+          OneChain Wallet
+        </ModalHeader>
+        <ModalCloseButton color="gray.600" />
         <ModalBody pb={6}>
           {error && (
             <Alert status="error" mb={4}>
@@ -301,10 +309,10 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
               ) : (
                 <>
                   <VStack spacing={3} textAlign="center">
-                    <Text fontSize="lg" fontWeight="bold" color="blue.600">
+                    <Text fontSize="lg" fontWeight="bold" color="gray.800">
                       Connect to OneChain
                     </Text>
-                    <Text color="gray.600" fontSize="sm">
+                    <Text color="gray.600" fontSize="sm" fontWeight="medium">
                       Choose how you'd like to connect your OneChain wallet
                     </Text>
                   </VStack>
@@ -440,37 +448,60 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
                 borderWidth={1}
                 borderRadius="md"
                 width="full"
-                bg="gray.50"
+                bg="white"
+                borderColor="gray.200"
               >
-                <VStack spacing={3}>
+                <VStack spacing={4}>
                   <HStack justify="space-between" width="full">
-                    <Text fontWeight="bold">Address:</Text>
-                    <Badge colorScheme="green">Connected</Badge>
+                    <Text fontWeight="bold" color="gray.700" fontSize="sm">Address:</Text>
+                    <Badge colorScheme="green" fontSize="xs">Connected</Badge>
                   </HStack>
                   
-                  <HStack width="full" spacing={2}>
-                    <Code fontSize="xs" flex={1} p={2}>
-                      {account?.address}
-                    </Code>
+                  <HStack width="full" spacing={2} align="start">
+                    <Box
+                      flex={1}
+                      p={3}
+                      bg="gray.50"
+                      borderRadius="md"
+                      borderWidth={1}
+                      borderColor="gray.200"
+                    >
+                      <Text
+                        fontSize="xs"
+                        color="gray.800"
+                        fontWeight="500"
+                        fontFamily="mono"
+                        wordBreak="break-all"
+                        lineHeight="1.5"
+                      >
+                        {account?.address}
+                      </Text>
+                    </Box>
                     <Tooltip label="Copy address">
                       <IconButton
                         aria-label="Copy address"
                         icon={<FiCopy />}
                         size="sm"
+                        colorScheme="purple"
+                        variant="ghost"
                         onClick={() => copyToClipboard(account?.address || "")}
                       />
                     </Tooltip>
                   </HStack>
 
-                  <HStack justify="space-between" width="full">
-                    <Text fontWeight="bold">Balance:</Text>
-                    <HStack>
-                      <Text>{formatBalance(account?.balance || "0")} SUI</Text>
+                  <HStack justify="space-between" width="full" pt={2}>
+                    <Text fontWeight="bold" color="gray.700" fontSize="sm">Balance:</Text>
+                    <HStack spacing={2}>
+                      <Text fontSize="md" fontWeight="bold" color="gray.800">
+                        {formatBalance(account?.balance || "0")} SUI
+                      </Text>
                       <Tooltip label="Refresh balance">
                         <IconButton
                           aria-label="Refresh balance"
                           icon={<FiRefreshCw />}
                           size="sm"
+                          colorScheme="purple"
+                          variant="ghost"
                           onClick={handleRefreshBalance}
                           isLoading={isLoading}
                         />
@@ -536,7 +567,10 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
               <Divider />
 
               <Button
-                onClick={disconnect}
+                onClick={() => {
+                  disconnect();
+                  onClose();
+                }}
                 variant="outline"
                 colorScheme="red"
                 width="full"
@@ -554,16 +588,29 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
 export function OneChainWalletButton() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { account, isConnected } = useOneChainWallet();
+  const [displayText, setDisplayText] = useState("Connect Wallet");
+
+  // Update display text when connection state changes
+  useEffect(() => {
+    if (isConnected && account?.address) {
+      setDisplayText(`${account.address.slice(0, 6)}...${account.address.slice(-4)}`);
+    } else {
+      setDisplayText("Connect Wallet");
+    }
+  }, [isConnected, account?.address]);
 
   return (
     <>
       <Button
         onClick={onOpen}
-        colorScheme={isConnected ? "green" : "blue"}
-        variant={isConnected ? "solid" : "outline"}
+        colorScheme={isConnected ? "green" : "purple"}
+        variant="solid"
         size="sm"
+        px={6}
+        fontWeight="600"
+        fontSize="sm"
       >
-        {isConnected ? `OneChain: ${account?.address?.slice(0, 6)}...` : "Connect OneChain"}
+        {displayText}
       </Button>
       <OneChainWallet isOpen={isOpen} onClose={onClose} />
     </>

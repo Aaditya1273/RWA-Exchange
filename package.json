@@ -19,7 +19,8 @@
     "fund-wallet": "node fund-wallet.js",
     "update-addresses": "node update-addresses.js",
     "verify:onechain-testnet": "hardhat verify --network onechain_testnet",
-    "verify:onechain-mainnet": "hardhat verify --network onechain_mainnet"
+    "verify:onechain-mainnet": "hardhat verify --network onechain_mainnet",
+    "proofpack": "node scripts/generate-proofpack.js"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.1.1",
@@ -50,7 +51,9 @@
     "scrypt-js": "^3.0.1"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
     "@nomicfoundation/hardhat-ethers": "^3.1.0",
+    "@nomicfoundation/hardhat-network-helpers": "^3.0.1",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-etherscan": "^3.1.8",
@@ -63,7 +66,7 @@
     "@types/react-dom": "^18",
     "chai": "^5.2.1",
     "dotenv": "^16.4.5",
-    "ethers": "^6.15.0",
+    "ethers": "^5.7.0",
     "hardhat": "^2.26.3",
     "hardhat-gas-reporter": "^2.3.0",
     "postcss": "^8",

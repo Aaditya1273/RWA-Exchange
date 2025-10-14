@@ -1,0 +1,59 @@
+name: Deploy Move Contract to Sui Testnet
+
+on:
+  workflow_dispatch:  # Manual trigger
+  push:
+    branches:
+      - main
+    paths:
+      - 'sources/**'
+      - 'Move.toml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Sui CLI
+        run: |
+          cargo install --locked --git https://github.com/MystenLabs/sui.git --branch testnet sui
+
+      - name: Setup Sui Wallet
+        run: |
+          echo "${{ secrets.SUI_PRIVATE_KEY }}" > ~/.sui/sui_config/sui.keystore
+          sui client active-address
+
+      - name: Build Move Contract
+        run: |
+          sui move build
+
+      - name: Deploy to Testnet
+        id: deploy
+        run: |
+          RESULT=$(sui client publish --gas-budget 100000000 --json)
+          PACKAGE_ID=$(echo $RESULT | jq -r '.objectChanges[] | select(.type=="published") | .packageId')
+          echo "PACKAGE_ID=$PACKAGE_ID" >> $GITHUB_OUTPUT
+          echo "Package deployed: $PACKAGE_ID"
+
+      - name: Update deployment.json
+        run: |
+          cat > deployment.json << EOF
+          {
+            "network": "testnet",
+            "packageId": "${{ steps.deploy.outputs.PACKAGE_ID }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)",
+            "modules": ["property_nft"],
+            "rpcUrl": "https://fullnode.testnet.sui.io:443"
+          }
+          EOF
+
+      - name: Commit deployment info
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add deployment.json
+          git commit -m "Update deployment info [skip ci]"
+          git push

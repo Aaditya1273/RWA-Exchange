@@ -24,9 +24,18 @@ async function deployContract() {
     
     if (existsSync(keypairPath)) {
       console.log('🔑 Loading existing keypair...');
-      const keypairData = readFileSync(keypairPath, 'utf8');
-      const privateKeyBytes = fromBase64(keypairData.trim());
-      keypair = Ed25519Keypair.fromSecretKey(privateKeyBytes);
+      const keypairData = readFileSync(keypairPath, 'utf8').trim();
+      
+      try {
+        // Try parsing as JSON first
+        const keypairJson = JSON.parse(keypairData);
+        const privateKeyBytes = fromBase64(keypairJson.privateKey);
+        keypair = Ed25519Keypair.fromSecretKey(privateKeyBytes);
+      } catch (e) {
+        // If not JSON, try as raw base64
+        const privateKeyBytes = fromBase64(keypairData);
+        keypair = Ed25519Keypair.fromSecretKey(privateKeyBytes);
+      }
     } else {
       console.log('🔑 Generating new keypair...');
       keypair = new Ed25519Keypair();
