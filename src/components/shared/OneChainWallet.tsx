@@ -79,6 +79,11 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
         status: "success",
         duration: 3000,
       });
+      
+      // Auto-close modal after successful connection
+      setTimeout(() => {
+        onClose();
+      }, 1000);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Failed to connect wallet";
       toast({
@@ -114,6 +119,11 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
         status: "success",
         duration: 3000,
       });
+      
+      // Auto-close modal after successful creation
+      setTimeout(() => {
+        onClose();
+      }, 1000);
     } catch (err) {
       toast({
         title: "Creation Failed",
@@ -569,6 +579,12 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
               <Button
                 onClick={() => {
                   disconnect();
+                  toast({
+                    title: "Wallet Disconnected",
+                    description: "Your wallet has been disconnected successfully",
+                    status: "info",
+                    duration: 2000,
+                  });
                   onClose();
                 }}
                 variant="outline"
@@ -587,17 +603,12 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
 
 export function OneChainWalletButton() {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { account, isConnected } = useOneChainWallet();
-  const [displayText, setDisplayText] = useState("Connect Wallet");
+  const { account, isConnected, isLoading } = useOneChainWallet();
 
-  // Update display text when connection state changes
-  useEffect(() => {
-    if (isConnected && account?.address) {
-      setDisplayText(`${account.address.slice(0, 6)}...${account.address.slice(-4)}`);
-    } else {
-      setDisplayText("Connect Wallet");
-    }
-  }, [isConnected, account?.address]);
+  // Directly compute display text from current state
+  const displayText = isConnected && account?.address 
+    ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` 
+    : "Connect Wallet";
 
   return (
     <>
@@ -609,6 +620,13 @@ export function OneChainWalletButton() {
         px={6}
         fontWeight="600"
         fontSize="sm"
+        leftIcon={isConnected ? <Box w={2} h={2} bg="green.300" borderRadius="full" /> : undefined}
+        isLoading={isLoading}
+        transition="all 0.3s"
+        _hover={{
+          transform: "translateY(-2px)",
+          shadow: "md"
+        }}
       >
         {displayText}
       </Button>

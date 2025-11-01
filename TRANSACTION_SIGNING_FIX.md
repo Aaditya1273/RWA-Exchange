@@ -32,8 +32,8 @@ The transaction was trying to call `property_nft::invest` Move function on a con
 - **After**: Simple coin split/merge operation that always works
 
 ### 2. **Reduced Gas Requirements**
-- **Before**: 50,000,000 MIST (0.05 SUI) gas budget
-- **After**: 2,000,000 MIST (0.002 SUI) gas budget
+- **Before**: 50,000,000 MIST (0.05 OCT) gas budget
+- **After**: 2,000,000 MIST (0.002 OCT) gas budget
 
 ### 3. **Fixed Asset ID Usage**
 - **Before**: Using contract address as project address
@@ -46,7 +46,7 @@ The transaction was trying to call `property_nft::invest` Move function on a con
 ## 🚀 **New Transaction Flow:**
 
 ### **Demo Transaction (Current):**
-1. **Split Coins**: Split 0.0001 SUI from gas
+1. **Split Coins**: Split 0.0001 OCT from gas
 2. **Merge Back**: Merge the coin back to gas
 3. **Result**: Valid transaction that simulates investment
 

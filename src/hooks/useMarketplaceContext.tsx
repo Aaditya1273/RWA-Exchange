@@ -271,143 +271,18 @@ export default function MarketplaceProvider({
         })
       );
 
-      // Filter out null values and add some sample assets if no real ones exist
+      // Filter out null values - ONLY REAL BLOCKCHAIN DATA
       const validAssets = realAssetsWithNulls.filter(asset => asset !== null) as MarketplaceAsset[];
       
-      if (validAssets.length === 0) {
-        // Add sample assets if no real properties exist
-        const sampleAssets: MarketplaceAsset[] = [
-          {
-            id: `${contractAddress}-sample-1`,
-            contractAddress,
-            tokenId: 'sample-1',
-            title: 'Luxury Downtown Condo',
-            description: 'Premium 2-bedroom condo in the heart of downtown with city views',
-            imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop',
-            price: '75000', // $750 per share
-            currency: 'USD',
-            owner: '0x0000000000000000000000000000000000000000',
-            isListed: true,
-            assetType: 'property',
-            metadata: {
-              location: 'Downtown District, Metro City',
-              size: '1000 shares',
-              yearBuilt: 2020,
-              appraisedValue: '750,000 USD',
-              rentalYield: '8.5%',
-              totalShares: 1000,
-              availableShares: 750,
-              propertyType: 'Residential Condo'
-            }
-          },
-          {
-            id: `${contractAddress}-sample-2`,
-            contractAddress,
-            tokenId: 'sample-2',
-            title: 'Modern Office Building',
-            description: 'Class A office building with premium tenants and stable income',
-            imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop',
-            price: '100000', // $1000 per share
-            currency: 'USD',
-            owner: '0x1111111111111111111111111111111111111111',
-            isListed: true,
-            assetType: 'property',
-            metadata: {
-              location: 'Business District, Metro City',
-              size: '2500 shares',
-              yearBuilt: 2021,
-              appraisedValue: '2,500,000 USD',
-              rentalYield: '12.0%',
-              totalShares: 2500,
-              availableShares: 2000,
-              propertyType: 'Commercial Office'
-            }
-          },
-          {
-            id: `${contractAddress}-sample-3`,
-            contractAddress,
-            tokenId: 'sample-3',
-            title: 'Suburban Family Home',
-            description: 'Beautiful 3-bedroom family home in quiet suburban neighborhood',
-            imageUrl: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=300&fit=crop',
-            price: '50000', // $500 per share
-            currency: 'USD',
-            owner: '0x2222222222222222222222222222222222222222',
-            isListed: true,
-            assetType: 'property',
-            metadata: {
-              location: 'Suburban Heights, Metro City',
-              size: '900 shares',
-              yearBuilt: 2018,
-              appraisedValue: '450,000 USD',
-              rentalYield: '6.8%',
-              totalShares: 900,
-              availableShares: 650,
-              propertyType: 'Single Family Home'
-            }
-          },
-          {
-            id: `${contractAddress}-sample-4`,
-            contractAddress,
-            tokenId: 'sample-4',
-            title: 'Renewable Energy Farm',
-            description: 'Solar energy farm with long-term power purchase agreements',
-            imageUrl: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=300&fit=crop',
-            price: '100000', // $1000 per share
-            currency: 'USD',
-            owner: '0x3333333333333333333333333333333333333333',
-            isListed: true,
-            assetType: 'property',
-            metadata: {
-              location: 'Green Valley, Renewable District',
-              size: '1200 shares',
-              yearBuilt: 2022,
-              appraisedValue: '1,200,000 USD',
-              rentalYield: '15.2%',
-              totalShares: 1200,
-              availableShares: 800,
-              propertyType: 'Infrastructure/Energy'
-            }
-          }
-        ];
-        
-        setAssets(sampleAssets);
-      } else {
-        setAssets(validAssets);
-      }
+      // NO MOCK DATA - Show only real blockchain properties
+      setAssets(validAssets);
       
     } catch (err) {
       console.error('Failed to load assets:', err);
       setError(err instanceof Error ? err.message : 'Failed to load assets');
       
-      // Fallback to sample data on error
-      const fallbackAssets: MarketplaceAsset[] = [
-        {
-          id: `${contractAddress}-fallback-1`,
-          contractAddress,
-          tokenId: 'fallback-1',
-          title: 'Sample Property Asset',
-          description: 'Sample tokenized real-world asset (blockchain connection failed)',
-          imageUrl: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop',
-          price: '75000', // $750 per share
-          currency: 'USD',
-          owner: '0x0000000000000000000000000000000000000000',
-          isListed: true,
-          assetType: 'property',
-          metadata: {
-            location: 'Sample Location',
-            size: '1000 shares',
-            yearBuilt: 2024,
-            appraisedValue: '750,000 USD',
-            rentalYield: '8.5%',
-            totalShares: 1000,
-            availableShares: 750,
-            propertyType: 'Sample Property'
-          }
-        }
-      ];
-      
-      setAssets(fallbackAssets);
+      // NO FALLBACK DATA - Show empty if blockchain fails
+      setAssets([]);
     } finally {
       setIsLoadingAssets(false);
     }

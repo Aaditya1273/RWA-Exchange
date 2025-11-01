@@ -2,7 +2,7 @@ import { SuiClient } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 
-const RPC_URL = process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://fullnode.testnet.sui.io:443';
+const RPC_URL = process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443';
 const PACKAGE_ID = process.env.NEXT_PUBLIC_RWA_PACKAGE_ID || '0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2';
 
 export interface PropertyData {
@@ -46,48 +46,50 @@ export class PropertyContractService {
   }
 
   /**
-   * Create a new property NFT on the blockchain
+   * Create a new property NFT on the blockchain using wallet standard
    */
   async createProperty(
     propertyData: PropertyData,
-    keypair: Ed25519Keypair
+    walletService?: any
   ): Promise<CreatePropertyResult> {
     try {
       const tx = new Transaction();
 
-      // Call the create_property function
+      // Call the create_property function with proper argument encoding
       tx.moveCall({
         target: `${PACKAGE_ID}::property_nft::create_property`,
         arguments: [
-          tx.pure.string(propertyData.name),
-          tx.pure.string(propertyData.description),
-          tx.pure.string(propertyData.imageUrl),
-          tx.pure.string(propertyData.location),
-          tx.pure.string(propertyData.propertyType),
+          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.name))),
+          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.description))),
+          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.imageUrl))),
+          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.location))),
+          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.propertyType))),
           tx.pure.u64(propertyData.totalValue),
           tx.pure.u64(propertyData.totalShares),
           tx.pure.u64(propertyData.pricePerShare),
-          tx.pure.string(propertyData.rentalYield),
+          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.rentalYield))),
         ],
       });
 
-      // Set gas budget
-      tx.setGasBudget(50_000_000); // 0.05 SUI
+      // Set gas budget for OneChain
+      tx.setGasBudget(10_000_000); // 0.01 OCT
 
-      // Execute transaction
-      const result = await this.client.signAndExecuteTransaction({
-        signer: keypair,
-        transaction: tx,
-        options: {
+      let result;
+      
+      // Use wallet service if provided, otherwise use direct client
+      if (walletService && walletService.signAndExecuteTransaction) {
+        result = await walletService.signAndExecuteTransaction(tx, {
           showEffects: true,
           showObjectChanges: true,
           showEvents: true,
-        },
-      });
+        });
+      } else {
+        throw new Error('Wallet service required for transaction signing');
+      }
 
       // Extract property ID from object changes
       const createdObjects = result.objectChanges?.filter(
-        (change) => change.type === 'created'
+        (change: any) => change.type === 'created'
       );
 
       const propertyObject = createdObjects?.find((obj: any) =>
@@ -97,7 +99,7 @@ export class PropertyContractService {
       return {
         success: true,
         transactionDigest: result.digest,
-        propertyId: (propertyObject as any)?.objectId,
+        propertyId: propertyObject?.objectId,
       };
     } catch (error) {
       console.error('Error creating property:', error);
@@ -126,19 +128,22 @@ export class PropertyContractService {
   }
 
   /**
-   * Invest in a property (buy fractional shares)
+   * Invest in a property (buy fractional shares) using wallet standard
    */
   async investInProperty(
     propertyId: string,
     sharesToBuy: number,
     paymentAmount: number,
-    keypair: Ed25519Keypair
+    walletService?: any
   ): Promise<InvestResult> {
     try {
       const tx = new Transaction();
 
-      // Get a coin for payment (simplified - in production, use actual coin selection)
-      const [coin] = tx.splitCoins(tx.gas, [paymentAmount]);
+      // Convert payment amount to MIST (OCT base unit)
+      const paymentInMist = paymentAmount * 1_000_000_000;
+
+      // Split coins for payment
+      const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(paymentInMist)]);
 
       // Call the invest function
       tx.moveCall({
@@ -150,23 +155,25 @@ export class PropertyContractService {
         ],
       });
 
-      // Set gas budget
-      tx.setGasBudget(50_000_000);
+      // Set gas budget for OneChain
+      tx.setGasBudget(50_000_000); // 0.05 OCT
 
-      // Execute transaction
-      const result = await this.client.signAndExecuteTransaction({
-        signer: keypair,
-        transaction: tx,
-        options: {
+      let result;
+      
+      // Use wallet service if provided
+      if (walletService && walletService.signAndExecuteTransaction) {
+        result = await walletService.signAndExecuteTransaction(tx, {
           showEffects: true,
           showObjectChanges: true,
           showEvents: true,
-        },
-      });
+        });
+      } else {
+        throw new Error('Wallet service required for transaction signing');
+      }
 
       // Extract investment ID from created objects
       const createdObjects = result.objectChanges?.filter(
-        (change) => change.type === 'created'
+        (change: any) => change.type === 'created'
       );
 
       const investmentObject = createdObjects?.find((obj: any) =>
@@ -176,7 +183,7 @@ export class PropertyContractService {
       return {
         success: true,
         transactionDigest: result.digest,
-        investmentId: (investmentObject as any)?.objectId,
+        investmentId: investmentObject?.objectId,
         sharesPurchased: sharesToBuy,
       };
     } catch (error) {

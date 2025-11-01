@@ -15,13 +15,13 @@ The OneChain wallet integration provides users with the ability to connect, mana
 - **Persistent Storage**: Wallet data saved in localStorage for convenience
 
 ### 💰 **Balance Management**
-- **Real-time Balance**: Display current SUI token balance
+- **Real-time Balance**: Display current OCT token balance
 - **Balance Refresh**: Manual balance refresh functionality
-- **Faucet Integration**: Request test tokens from OneChain testnet faucet
-- **Balance Formatting**: User-friendly balance display (MIST to SUI conversion)
+- **Faucet Integration**: Request test OCT tokens from OneChain testnet faucet
+- **Balance Formatting**: User-friendly balance display (MIST to OCT conversion)
 
 ### 💸 **Transaction Capabilities**
-- **Send Transactions**: Transfer SUI tokens to other addresses
+- **Send Transactions**: Transfer OCT tokens to other addresses
 - **Transaction History**: View transaction details and status
 - **Gas Management**: Automatic gas handling for transactions
 - **Error Handling**: Comprehensive error handling and user feedback
@@ -93,7 +93,7 @@ NEXT_PUBLIC_ONECHAIN_NETWORK=testnet
    - Wallet address and balance will be displayed
 
 2. **Request Test Tokens**
-   - Click "Request Faucet" to get test SUI tokens
+   - Click "Request Faucet" to get test OCT tokens
    - Available only on testnet network
    - Balance will automatically refresh after successful request
 

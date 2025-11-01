@@ -33,8 +33,8 @@ class OneChainService {
 
   constructor(config?: OneChainConfig) {
     this.config = config || {
-      rpcUrl: process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://fullnode.testnet.sui.io:443',
-      faucetUrl: process.env.NEXT_PUBLIC_ONECHAIN_FAUCET_URL || 'https://faucet.testnet.sui.io/v2/gas',
+      rpcUrl: process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443',
+      faucetUrl: process.env.NEXT_PUBLIC_ONECHAIN_FAUCET_URL || 'https://faucet-testnet.onelabs.cc:443',
       network: (process.env.NEXT_PUBLIC_ONECHAIN_NETWORK as 'testnet' | 'mainnet') || 'testnet'
     };
     
@@ -398,12 +398,13 @@ class OneChainService {
 
   /**
    * Create transaction using Wallet Standard pattern
+   * Uses OCT (OneChain Token) as default currency
    */
   async createTransaction(
     sender: string,
     recipient: string,
     amount: string,
-    coinType: string = '0x2::sui::SUI'
+    coinType: string = '0x2::sui::SUI' // OCT uses same coin type as SUI on OneChain
   ): Promise<Transaction> {
     // Use the Wallet Standard service to create the transaction
     return await oneChainWalletStandardService.createTransactionForWallet(
@@ -415,11 +416,12 @@ class OneChainService {
 
   /**
    * Create and execute transaction with Wallet Standard
+   * Uses OCT (OneChain Token) as default currency
    */
   async createAndExecuteTransaction(
     recipient: string,
     amount: string,
-    coinType: string = '0x2::sui::SUI'
+    coinType: string = '0x2::sui::SUI' // OCT uses same coin type as SUI on OneChain
   ): Promise<any> {
     const tx = await this.createTransaction('', recipient, amount, coinType);
     return await this.signAndExecuteTransaction(tx);
@@ -437,7 +439,7 @@ class OneChainService {
   }
 
   /**
-   * Get balance
+   * Get OCT balance
    */
   async getBalance(address: string, coinType: string = '0x2::sui::SUI'): Promise<string> {
     try {
@@ -477,10 +479,12 @@ class OneChainService {
   }
 
   /**
-   * Request tokens from faucet
+   * Request OCT tokens from OneChain faucet
    */
   async requestFromFaucet(address: string): Promise<boolean> {
     try {
+      console.log('Requesting OCT tokens from OneChain faucet for address:', address);
+      
       const response = await fetch(`${this.config.faucetUrl}/gas`, {
         method: 'POST',
         headers: {
@@ -493,9 +497,15 @@ class OneChainService {
         }),
       });
 
-      return response.ok;
+      if (response.ok) {
+        console.log('OCT faucet request successful');
+        return true;
+      } else {
+        console.error('OCT faucet request failed:', response.status, response.statusText);
+        return false;
+      }
     } catch (error) {
-      console.error('Faucet request failed:', error);
+      console.error('OCT faucet request failed:', error);
       return false;
     }
   }

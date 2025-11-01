@@ -22,6 +22,7 @@ import { IoSunny } from "react-icons/io5";
 import { SideMenu } from "./SideMenu";
 import { OneChainWalletButton } from "./OneChainWallet";
 import { useOneChainWallet } from "@/hooks/useOneChainWallet";
+import { usePathname } from "next/navigation";
 
 export function Navbar() {
   const { 
@@ -30,9 +31,13 @@ export function Navbar() {
     disconnect 
   } = useOneChainWallet();
 
+  const pathname = usePathname();
+
   const handleLogout = async () => {
     await disconnect();
   };
+
+  const isActive = (path: string) => pathname === path;
 
   return (
     <Box py="16px" px={{ base: "20px", lg: "50px" }}>
@@ -56,19 +61,79 @@ export function Navbar() {
         <HStack display={{ lg: "flex", base: "none" }} spacing={4}>
           <HStack spacing={6}>
             <Link href="/landing" _hover={{ textDecoration: "none" }}>
-              <Text fontWeight="medium" fontSize="sm">About</Text>
+              <Text 
+                fontWeight={isActive("/landing") ? "bold" : "medium"} 
+                fontSize="sm"
+                color={isActive("/landing") ? "purple.500" : "gray.600"}
+                borderBottom={isActive("/landing") ? "2px solid" : "none"}
+                borderColor="purple.500"
+                pb={1}
+                transition="all 0.2s"
+                _hover={{ color: "purple.500" }}
+                cursor="pointer"
+              >
+                About
+              </Text>
             </Link>
             <Link href="/create-property" _hover={{ textDecoration: "none" }}>
-              <Text fontWeight="medium" fontSize="sm" color="purple.500">Create Property</Text>
+              <Text 
+                fontWeight={isActive("/create-property") ? "bold" : "medium"} 
+                fontSize="sm" 
+                color={isActive("/create-property") ? "purple.500" : "gray.600"}
+                borderBottom={isActive("/create-property") ? "2px solid" : "none"}
+                borderColor="purple.500"
+                pb={1}
+                transition="all 0.2s"
+                _hover={{ color: "purple.500" }}
+                cursor="pointer"
+              >
+                Create Property
+              </Text>
             </Link>
             <Link href="/collection" _hover={{ textDecoration: "none" }}>
-              <Text fontWeight="medium" fontSize="sm">Marketplace</Text>
+              <Text 
+                fontWeight={isActive("/collection") ? "bold" : "medium"} 
+                fontSize="sm"
+                color={isActive("/collection") ? "purple.500" : "gray.600"}
+                borderBottom={isActive("/collection") ? "2px solid" : "none"}
+                borderColor="purple.500"
+                pb={1}
+                transition="all 0.2s"
+                _hover={{ color: "purple.500" }}
+                cursor="pointer"
+              >
+                Marketplace
+              </Text>
             </Link>
             <Link href="/my-investments" _hover={{ textDecoration: "none" }}>
-              <Text fontWeight="medium" fontSize="sm" color="green.500">My Investments</Text>
+              <Text 
+                fontWeight={isActive("/my-investments") ? "bold" : "medium"} 
+                fontSize="sm" 
+                color={isActive("/my-investments") ? "green.500" : "gray.600"}
+                borderBottom={isActive("/my-investments") ? "2px solid" : "none"}
+                borderColor="green.500"
+                pb={1}
+                transition="all 0.2s"
+                _hover={{ color: "green.500" }}
+                cursor="pointer"
+              >
+                My Investments
+              </Text>
             </Link>
             <Link href="/dashboard" _hover={{ textDecoration: "none" }}>
-              <Text fontWeight="medium" fontSize="sm">Dashboard</Text>
+              <Text 
+                fontWeight={isActive("/dashboard") ? "bold" : "medium"} 
+                fontSize="sm"
+                color={isActive("/dashboard") ? "purple.500" : "gray.600"}
+                borderBottom={isActive("/dashboard") ? "2px solid" : "none"}
+                borderColor="purple.500"
+                pb={1}
+                transition="all 0.2s"
+                _hover={{ color: "purple.500" }}
+                cursor="pointer"
+              >
+                Dashboard
+              </Text>
             </Link>
           </HStack>
 

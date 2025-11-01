@@ -66,18 +66,18 @@ export default function CollectionPage() {
   const textColor = useColorModeValue("gray.600", "gray.300");
   const borderColor = useColorModeValue("gray.200", "gray.600");
 
-  // Fetch properties from blockchain
+  // Fetch properties from blockchain - REAL DATA ONLY
   useEffect(() => {
     const fetchProperties = async () => {
       setIsLoading(true);
       try {
         const properties = await propertyContractService.getAllProperties();
-        if (properties.length > 0) {
-          setBlockchainProperties(properties);
-          setUseBlockchainData(true);
-        }
+        setBlockchainProperties(properties);
+        setUseBlockchainData(true); // Always use blockchain data
       } catch (error) {
         console.error('Error fetching blockchain properties:', error);
+        setBlockchainProperties([]); // Show empty if error
+        setUseBlockchainData(true);
       } finally {
         setIsLoading(false);
       }
@@ -91,8 +91,8 @@ export default function CollectionPage() {
     onOpen();
   };
 
-  // Use blockchain data if available, otherwise use mock data
-  const dataSource = useBlockchainData ? blockchainProperties : NFT_CONTRACTS;
+  // ONLY USE REAL BLOCKCHAIN DATA - NO MOCK DATA
+  const dataSource = blockchainProperties;
 
   const filteredContracts = dataSource.filter(item => {
     const matchesSearch = (item.title || item.name)?.toLowerCase().includes(searchTerm.toLowerCase()) || 

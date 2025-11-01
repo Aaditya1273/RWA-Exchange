@@ -2,13 +2,13 @@
 /// This module handles tokenization of real estate properties as NFTs
 /// with fractional ownership and investment capabilities
 module rwa_exchange::property_nft {
-    use 0x2::object::{Self, UID};
-    use 0x2::transfer;
-    use 0x2::tx_context::{Self, TxContext};
-    use 0x2::coin::{Self, Coin};
-    use 0x2::one::ONE;
-    use 0x2::balance::{Self, Balance};
-    use 0x2::event;
+    use sui::object::{Self, UID};
+    use sui::transfer;
+    use sui::tx_context::{Self, TxContext};
+    use sui::coin::{Self, Coin};
+    use sui::sui::SUI;
+    use sui::balance::{Self, Balance};
+    use sui::event;
     use std::string::{Self, String};
     use std::vector;
 
@@ -36,7 +36,7 @@ module rwa_exchange::property_nft {
         rental_yield: String,
         is_active: bool,
         owner: address,
-        treasury: Balance<ONE>,
+        treasury: Balance<SUI>,
     }
 
     /// Investment record for tracking individual investments
@@ -139,7 +139,7 @@ module rwa_exchange::property_nft {
     /// Invest in a property by purchasing shares
     public entry fun invest(
         property: &mut PropertyNFT,
-        payment: Coin<ONE>,
+        payment: Coin<SUI>,
         shares_to_buy: u64,
         ctx: &mut TxContext
     ) {
@@ -188,7 +188,7 @@ module rwa_exchange::property_nft {
     public entry fun distribute_dividends(
         property: &mut PropertyNFT,
         _cap: &PropertyCap,
-        dividend_amount: Coin<ONE>,
+        dividend_amount: Coin<SUI>,
         ctx: &mut TxContext
     ) {
         assert!(property.owner == tx_context::sender(ctx), ENotOwner);
@@ -283,12 +283,16 @@ module rwa_exchange::property_nft {
     /// Buy listed investment shares
     public entry fun buy_listed_investment(
         investment: Investment,
-        payment: Coin<ONE>,
+        payment: Coin<SUI>,
         seller: address,
         ctx: &mut TxContext
     ) {
         let buyer = tx_context::sender(ctx);
         let payment_amount = coin::value(&payment);
+        
+        // Extract investment data before moving
+        let investment_id = object::uid_to_address(&investment.id);
+        let shares = investment.shares_owned;
         
         // Transfer payment to seller
         transfer::public_transfer(payment, seller);
@@ -298,10 +302,10 @@ module rwa_exchange::property_nft {
         
         // Emit trade event
         event::emit(InvestmentTraded {
-            investment_id: object::uid_to_address(&investment.id),
+            investment_id,
             seller,
             buyer,
-            shares: investment.shares_owned,
+            shares,
             price: payment_amount,
         });
     }

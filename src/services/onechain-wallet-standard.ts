@@ -54,7 +54,7 @@ class OneChainWalletStandardService {
   private connectedAccount: WalletStandardAccount | null = null;
 
   constructor() {
-    const rpcUrl = process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://fullnode.testnet.sui.io:443';
+    const rpcUrl = process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443';
     this.suiClient = new SuiClient({ url: rpcUrl });
   }
 
@@ -276,18 +276,18 @@ class OneChainWalletStandardService {
         });
         
         const balanceAmount = parseInt(balance.totalBalance);
-        const balanceInSui = balanceAmount / 1_000_000_000;
-        console.log('Wallet balance:', balance.totalBalance, 'MIST', `(${balanceInSui} SUI)`);
+        const balanceInOct = balanceAmount / 1_000_000_000;
+        console.log('Wallet balance:', balance.totalBalance, 'MIST', `(${balanceInOct} OCT)`);
         
-        // Check if we have any SUI balance at all (including from different coin types)
-        const hasSuiBalance = allBalances.some(b => 
+        // Check if we have any OCT balance at all (including from different coin types)
+        const hasOctBalance = allBalances.some(b => 
           b.coinType === '0x2::sui::SUI' && parseInt(b.totalBalance) > 0
         );
         
-        console.log('Has SUI balance:', hasSuiBalance, 'Total SUI:', balanceInSui);
+        console.log('Has OCT balance:', hasOctBalance, 'Total OCT:', balanceInOct);
         
         // Very minimal balance requirement - just need gas for transaction
-        if (balanceAmount < 100_000 && !hasSuiBalance) { // Less than 0.0001 SUI
+        if (balanceAmount < 100_000 && !hasOctBalance) { // Less than 0.0001 OCT
           console.warn('Very low balance detected:', balanceAmount, 'MIST');
           
           // In development or testnet, show warning but allow transaction to proceed
@@ -295,10 +295,10 @@ class OneChainWalletStandardService {
             console.warn('Testnet/Development mode: Proceeding with transaction despite low balance');
           } else {
             // Show a more helpful error message
-            throw new Error(`Insufficient balance for gas fees. Current balance: ${balanceInSui.toFixed(6)} SUI. Please get testnet SUI from the faucet.`);
+            throw new Error(`Insufficient balance for gas fees. Current balance: ${balanceInOct.toFixed(6)} OCT. Please get testnet OCT from the OneChain faucet.`);
           }
         } else {
-          console.log('Balance check passed:', balanceInSui, 'SUI available for gas');
+          console.log('Balance check passed:', balanceInOct, 'OCT available for gas');
         }
       } catch (balanceError) {
         console.warn('Balance check failed, proceeding with transaction anyway:', balanceError);
@@ -455,11 +455,12 @@ class OneChainWalletStandardService {
   /**
    * Create a transaction for dApp to wallet communication
    * Following the recommended pattern: serialize in dApp, deserialize in wallet
+   * Uses OCT (OneChain Token) as default currency
    */
   async createTransactionForWallet(
     recipient: string,
     amount: string,
-    coinType: string = '0x2::sui::SUI'
+    coinType: string = '0x2::sui::SUI' // OCT uses same coin type as SUI on OneChain
   ): Promise<Transaction> {
     const tx = new Transaction();
     
@@ -471,7 +472,7 @@ class OneChainWalletStandardService {
   }
 
   /**
-   * Create RWA investment transaction
+   * Create RWA investment transaction - Real implementation
    */
   async createRWAInvestmentTransaction(
     projectAddress: string,
@@ -479,41 +480,39 @@ class OneChainWalletStandardService {
     investorAddress?: string
   ): Promise<Transaction> {
     const tx = new Transaction();
+    const packageId = process.env.NEXT_PUBLIC_RWA_PACKAGE_ID || '0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2';
     
-    console.log('Creating simple demo investment transaction:', { projectAddress, amount, investorAddress });
+    console.log('Creating real RWA investment transaction:', { projectAddress, amount, investorAddress, packageId });
     
     try {
-      // Create a very simple transaction that just splits and merges coins
-      // This simulates an investment without calling any Move functions
+      // Convert amount to proper format (assuming amount is in OCT, convert to MIST)
+      const amountInMist = parseInt(amount) * 1_000_000_000;
       
-      // Use a very small amount for demo (0.0001 SUI)
-      const demoAmount = 100000; // 0.0001 SUI in MIST
+      // Split coins for payment
+      const [paymentCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(amountInMist)]);
       
-      console.log('Creating minimal demo transaction with amount:', demoAmount, 'MIST');
+      // Calculate shares to buy (simplified: 1 share per OCT)
+      const sharesToBuy = parseInt(amount);
       
-      // Split a tiny amount from gas
-      const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(demoAmount)]);
+      // Call the invest function from the Move contract
+      tx.moveCall({
+        target: `${packageId}::property_nft::invest`,
+        arguments: [
+          tx.object(projectAddress), // Property NFT object
+          paymentCoin,              // Payment coin
+          tx.pure.u64(sharesToBuy), // Number of shares to buy
+        ],
+      });
       
-      // Immediately merge it back (this creates a valid transaction that does nothing)
-      tx.mergeCoins(tx.gas, [coin]);
+      // Set appropriate gas budget for real transaction
+      tx.setGasBudget(50_000_000); // 0.05 OCT for complex transaction
       
-      // Set minimal gas budget
-      tx.setGasBudget(2_000_000); // 0.002 SUI - very minimal
-      
-      console.log('Created simple demo transaction');
+      console.log('Created real RWA investment transaction');
       return tx;
       
     } catch (error) {
-      console.error('Error creating demo transaction:', error);
-      
-      // Ultimate fallback - just create an empty transaction that transfers 1 MIST to self
-      if (investorAddress) {
-        const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(1)]);
-        tx.transferObjects([coin], tx.pure.address(investorAddress));
-      }
-      
-      tx.setGasBudget(1_000_000); // 0.001 SUI
-      return tx;
+      console.error('Error creating RWA investment transaction:', error);
+      throw error;
     }
   }
 
@@ -616,7 +615,7 @@ class OneChainWalletStandardService {
   }
 
   /**
-   * Get balance for connected account
+   * Get OCT balance for connected account
    */
   async getBalance(coinType: string = '0x2::sui::SUI'): Promise<string> {
     if (!this.connectedAccount) {

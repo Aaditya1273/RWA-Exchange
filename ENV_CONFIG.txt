@@ -1,0 +1,18 @@
+# ===== ONECHAIN CONFIGURATION =====
+# Copy this to .env.local file
+
+# Use blockchain mode (NO DATABASE/MOCK DATA)
+NEXT_PUBLIC_APP_MODE=blockchain
+
+# OneChain RPC URL (Testnet)
+NEXT_PUBLIC_ONECHAIN_RPC_URL=https://rpc-testnet.onelabs.cc:443
+
+# Your deployed package ID (update after deployment)
+NEXT_PUBLIC_RWA_PACKAGE_ID=PASTE_YOUR_PACKAGE_ID_HERE
+
+# ===== INSTRUCTIONS =====
+# 1. Deploy contract to OneChain testnet
+# 2. Copy Package ID from deployment
+# 3. Paste it above
+# 4. Copy all lines to .env.local
+# 5. Restart: npm run dev

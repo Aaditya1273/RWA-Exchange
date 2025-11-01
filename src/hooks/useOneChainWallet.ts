@@ -79,6 +79,7 @@ export const useOneChainWallet = (): UseOneChainWalletReturn => {
     setAccount(null);
     localStorage.removeItem('onechain_wallet');
     setError(null);
+    // No page reload - state updates automatically
   }, []);
 
   const createWallet = useCallback(async (): Promise<WalletAccountWithBalance> => {

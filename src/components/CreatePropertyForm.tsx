@@ -221,7 +221,9 @@ export function CreatePropertyForm() {
                 <NumberInput
                   value={formData.totalValue}
                   onChange={(_, val) => setFormData({ ...formData, totalValue: val })}
-                  min={1000}
+                  min={100}
+                  step={100}
+                  precision={2}
                 >
                   <NumberInputField />
                 </NumberInput>
@@ -233,6 +235,7 @@ export function CreatePropertyForm() {
                   value={formData.totalShares}
                   onChange={(_, val) => setFormData({ ...formData, totalShares: val })}
                   min={1}
+                  step={1}
                 >
                   <NumberInputField />
                 </NumberInput>
@@ -245,7 +248,9 @@ export function CreatePropertyForm() {
                 <NumberInput
                   value={formData.pricePerShare}
                   onChange={(_, val) => setFormData({ ...formData, pricePerShare: val })}
-                  min={1}
+                  min={0.01}
+                  step={0.01}
+                  precision={2}
                 >
                   <NumberInputField />
                 </NumberInput>
@@ -256,6 +261,8 @@ export function CreatePropertyForm() {
                 <InputGroup>
                   <Input
                     placeholder="8.5"
+                    type="number"
+                    step="0.1"
                     value={formData.rentalYield}
                     onChange={(e) => setFormData({ ...formData, rentalYield: e.target.value })}
                   />

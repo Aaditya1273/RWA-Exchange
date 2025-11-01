@@ -24,9 +24,8 @@ import {
   Box,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { useOneChainWallet } from "@/hooks/useOneChainWallet";
-import { propertyContractService } from "@/services/propertyContract";
-import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
+import { useWalletStandard } from "@/hooks/useWalletStandard";
+import { propertyManager } from "@/services/propertyManager";
 
 interface InvestmentModalProps {
   isOpen: boolean;
@@ -47,7 +46,7 @@ export function InvestmentModal({
   availableShares,
   totalShares,
 }: InvestmentModalProps) {
-  const { account, isConnected } = useOneChainWallet();
+  const { account, isConnected, balance } = useWalletStandard();
   const toast = useToast();
   const [sharesToBuy, setSharesToBuy] = useState(1);
   const [isInvesting, setIsInvesting] = useState(false);

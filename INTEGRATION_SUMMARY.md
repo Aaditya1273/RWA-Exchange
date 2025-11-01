@@ -57,7 +57,7 @@
 
 ### ✅ Transaction Patterns
 
-- **Basic Transfers**: Send SUI tokens between addresses
+- **Basic Transfers**: Send OCT tokens between addresses
 - **RWA Investments**: Create investment transactions for real-world assets
 - **Sponsored Transactions**: Gas-less transactions with sponsor support
 - **Sign-Only**: Sign transactions without execution
@@ -132,7 +132,7 @@ const sponsoredTx = await createSponsoredTransaction(
 
    - Download and install the OneChain wallet browser extension
    - Create or import a wallet
-   - Fund the wallet with SUI tokens
+   - Fund the wallet with OCT tokens
 
 2. **Run the Demo**
 
