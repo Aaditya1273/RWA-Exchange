@@ -1,7 +1,6 @@
-import { SuiClient } from '@mysten/sui.js/client';
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { SuiClient } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
-import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 
 const RPC_URL = process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443';
 const PACKAGE_ID = process.env.NEXT_PUBLIC_RWA_PACKAGE_ID || '0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2';
@@ -286,9 +285,9 @@ export class PropertyContractService {
 
       // Note: This function uses keypair directly (not wallet service)
       // For wallet integration, this should be updated to use walletService
-      const result = await this.client.signAndExecuteTransactionBlock({
+      const result = await this.client.signAndExecuteTransaction({
         signer: keypair,
-        transactionBlock: tx as any, // Type assertion for Transaction compatibility
+        transaction: tx,
         options: {
           showEffects: true,
         },
