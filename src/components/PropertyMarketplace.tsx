@@ -359,6 +359,9 @@ const PropertyMarketplace: React.FC = () => {
 
       const tx = new Transaction();
       
+      // Set sender (required for wallet to display transaction)
+      tx.setSender(account.address);
+      
       // Get OCT coins for payment
       const coins = await client.getCoins({
         owner: account.address,
@@ -388,6 +391,9 @@ const PropertyMarketplace: React.FC = () => {
           tx.pure.u64(shares),
         ],
       });
+
+      // Set gas budget (required for wallet to display transaction)
+      tx.setGasBudget(50_000_000); // 0.05 OCT
 
       // Execute transaction using OneChain service
       const result = await oneChainService.signAndExecuteTransaction(tx);

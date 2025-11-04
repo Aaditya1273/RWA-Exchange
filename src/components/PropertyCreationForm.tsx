@@ -186,8 +186,17 @@ const PropertyCreationForm: React.FC = () => {
     setIsCreating(true);
 
     try {
+      // Get connected wallet account
+      const account = await oneChainService.getConnectedAccount();
+      if (!account) {
+        throw new Error('Please connect your wallet first');
+      }
+
       // Create transaction using OneChain service
       const tx = new Transaction();
+      
+      // Set sender (required for wallet to display transaction)
+      tx.setSender(account.address);
       
       // Call the create_property function from your deployed contract
       tx.moveCall({
@@ -204,6 +213,9 @@ const PropertyCreationForm: React.FC = () => {
           tx.pure.string(formData.rentalYield),
         ],
       });
+
+      // Set gas budget (required for wallet to display transaction)
+      tx.setGasBudget(50_000_000); // 0.05 OCT
 
       // Execute transaction using OneChain service
       const result = await oneChainService.signAndExecuteTransaction(tx);
