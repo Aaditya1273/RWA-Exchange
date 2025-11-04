@@ -151,51 +151,198 @@ Marketplace:    0x0000000000000000000000000000000000000000  # Update after deplo
 > **Note**: Replace the placeholder addresses (0x000...) with actual deployed contract addresses after running the deployment scripts.
 
 
-## OneChain Integration Flow
+## 🏗️ Property NFT Creation → Fractionalization → Listing Flow
+
+### Complete Workflow
 
 ```mermaid
 flowchart TD
-  subgraph OneChain[OneChain RWA Ecosystem]
-    A[Real-World Asset] --> B[Property NFT Minting]
-    B --> C[Asset Verification & Compliance]
-    C --> D[OneChain Marketplace Listing]
-    D --> E{Investment Options}
+    Start[Start: Real-World Asset] --> Create[1. Create Property NFT]
     
-    E --> F[Direct Purchase]
-    E --> G[Fractionalization]
+    Create --> CreateDetails[Property Details:<br/>- Name & Description<br/>- Location & Type<br/>- Total Value<br/>- Total Shares<br/>- Price per Share OCT<br/>- Rental Yield]
     
-    G --> H[ERC20 Fraction Tokens]
-    H --> I[Secondary Trading]
-    I --> J[Liquidity Pool]
+    CreateDetails --> Mint[2. Mint Property NFT]
+    Mint --> MintTx[Transaction on OneChain<br/>PropertyNFT Object Created]
     
-    F --> K[Full Asset Ownership]
-    J --> L{Collect All Fractions?}
-    L -- Yes --> M[Asset Redemption]
-    L -- No --> N[Continue Trading]
+    MintTx --> Fractional[3. Automatic Fractionalization]
+    Fractional --> FracDetails[Fractional Shares:<br/>- Total Shares: 10,000<br/>- Available: 10,000<br/>- Price: 0.001 OCT/share<br/>- Stored On-Chain]
     
-    M --> K
-    N --> I
+    FracDetails --> List[4. Auto-Listed in Marketplace]
+    List --> ListDetails[Marketplace Listing:<br/>- Visible to all users<br/>- Real-time availability<br/>- Instant investment ready]
     
-    K --> O[Asset Management]
-    O --> P[Yield Generation]
-    P --> Q[Profit Distribution]
-  end
-
-  subgraph Tech[Technical Implementation]
-    R[PropertyNFT.sol] --> S[Fractionalizer.sol]
-    S --> T[Fraction.sol ERC20]
-    T --> U[Marketplace V3]
-    U --> V[OneChain Network]
-  end
-
-  subgraph User[User Journey]
-    W[Connect Wallet] --> X[Browse RWA Assets]
-    X --> Y[Select Investment Amount]
-    Y --> Z[Purchase Fractions]
-    Z --> AA[Track Portfolio]
-    AA --> BB[Trade or Redeem]
-  end
+    ListDetails --> Invest[5. Users Can Invest]
+    Invest --> InvestOptions{Investment Options}
+    
+    InvestOptions --> BuyShares[Buy Fractional Shares]
+    BuyShares --> ShareDetails[Purchase Details:<br/>- Min: 1 share<br/>- Max: Available shares<br/>- Payment in OCT<br/>- Gas: ~0.05 OCT]
+    
+    ShareDetails --> InvestNFT[Investment NFT Created]
+    InvestNFT --> InvestRecord[Investment Record:<br/>- Property ID<br/>- Shares Owned<br/>- Investment Amount<br/>- Timestamp]
+    
+    InvestRecord --> Portfolio[6. Track in Portfolio]
+    Portfolio --> PortfolioView[My Investments Page:<br/>- Total Invested<br/>- Total Shares<br/>- Properties Owned<br/>- Real-time Updates]
+    
+    PortfolioView --> Transfer[7. Transfer Shares Optional]
+    Transfer --> TransferTx[Transfer Investment NFT<br/>to Another User]
+    
+    TransferTx --> End[End: Complete Ownership Cycle]
+    
+    style Create fill:#9f7aea,stroke:#805ad5,color:#fff
+    style Fractional fill:#38b2ac,stroke:#319795,color:#fff
+    style List fill:#ed8936,stroke:#dd6b20,color:#fff
+    style Invest fill:#48bb78,stroke:#38a169,color:#fff
+    style Portfolio fill:#4299e1,stroke:#3182ce,color:#fff
 ```
+
+### Technical Implementation
+
+```mermaid
+flowchart LR
+    subgraph Creation[Property Creation]
+        A[User Input] --> B[CreatePropertyForm]
+        B --> C[propertyContract.createProperty]
+        C --> D[Move: create_property]
+        D --> E[PropertyNFT Object]
+    end
+    
+    subgraph Fractionalization[Built-in Fractionalization]
+        E --> F[totalShares: 10000]
+        F --> G[availableShares: 10000]
+        G --> H[pricePerShare: OCT]
+        H --> I[Stored in PropertyNFT]
+    end
+    
+    subgraph Listing[Marketplace Integration]
+        I --> J[getAllProperties]
+        J --> K[Collection Page]
+        K --> L[Display Cards]
+        L --> M[Investment Modal]
+    end
+    
+    subgraph Investment[Investment Process]
+        M --> N[User Selects Shares]
+        N --> O[propertyContract.invest]
+        O --> P[Move: invest function]
+        P --> Q[Investment NFT Created]
+        Q --> R[Shares Deducted]
+    end
+    
+    subgraph Portfolio[Portfolio Tracking]
+        R --> S[getUserInvestments]
+        S --> T[My Investments Page]
+        T --> U[Real-time Balance]
+        U --> V[Transfer Option]
+    end
+    
+    style Creation fill:#e6f7ff
+    style Fractionalization fill:#f0f5ff
+    style Listing fill:#fff7e6
+    style Investment fill:#f6ffed
+    style Portfolio fill:#fff0f6
+```
+
+### Key Features
+
+#### 1️⃣ **Property NFT Creation**
+- **Input**: Property details (name, location, value, shares, price)
+- **Output**: Unique PropertyNFT object on OneChain
+- **Gas**: ~0.01 OCT
+- **Time**: ~3-5 seconds
+
+#### 2️⃣ **Automatic Fractionalization**
+- **Built-in**: No separate fractionalization step needed
+- **Shares**: Defined at creation (e.g., 10,000 shares)
+- **Price**: Set in OCT (e.g., 0.001 OCT per share)
+- **Flexible**: Users can buy 1 to all available shares
+
+#### 3️⃣ **Instant Marketplace Listing**
+- **Auto-listed**: Property appears immediately in marketplace
+- **Real-time**: Updates as shares are purchased
+- **Searchable**: Filterable by type, location, price
+- **Transparent**: All details visible to investors
+
+#### 4️⃣ **Investment Process**
+- **Simple**: Select shares → Confirm → Sign transaction
+- **Fast**: Investment completes in seconds
+- **Secure**: Blockchain-verified ownership
+- **Tracked**: Investment NFT created for each purchase
+
+#### 5️⃣ **Portfolio Management**
+- **Dashboard**: View all investments in one place
+- **Real-time**: Live updates of share counts
+- **Transferable**: Send Investment NFTs to others
+- **Analytics**: Track total invested, shares owned
+
+### Smart Contract Functions
+
+```move
+// 1. Create Property NFT
+public entry fun create_property(
+    name: String,
+    description: String,
+    image_url: String,
+    location: String,
+    property_type: String,
+    total_value: u64,
+    total_shares: u64,
+    price_per_share: u64,
+    rental_yield: String,
+    ctx: &mut TxContext
+)
+
+// 2. Invest in Property (Buy Shares)
+public entry fun invest(
+    property: &mut PropertyNFT,
+    payment: Coin<OCT>,
+    shares_to_buy: u64,
+    ctx: &mut TxContext
+)
+
+// 3. Transfer Investment
+public entry fun transfer_investment(
+    investment: Investment,
+    recipient: address,
+    _ctx: &mut TxContext
+)
+```
+
+### Example Usage
+
+#### Create Property
+```bash
+sui client call \
+  --package 0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2 \
+  --module property_nft \
+  --function create_property \
+  --args "Sunset Villa" "Luxury beachfront property" \
+         "https://example.com/villa.jpg" "Miami Beach" \
+         "Residential" 1000000 10000 1 "8.5%" \
+  --gas-budget 10000000
+```
+
+#### Invest in Property
+```bash
+sui client call \
+  --package 0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2 \
+  --module property_nft \
+  --function invest \
+  --args [PROPERTY_ID] [COIN_ID] 100 \
+  --gas-budget 50000000
+```
+
+### Benefits
+
+✅ **Simplified**: No separate fractionalization step  
+✅ **Efficient**: One-time property creation  
+✅ **Flexible**: Any number of shares (1 to total)  
+✅ **Transparent**: All data on-chain  
+✅ **Instant**: Immediate marketplace visibility  
+✅ **Secure**: Blockchain-verified ownership  
+✅ **Transferable**: Investment NFTs can be traded  
+
+---
+
+## OneChain Integration Flow
 
 ## Dev + User Flow
 
