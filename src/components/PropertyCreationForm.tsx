@@ -28,7 +28,7 @@ import { FiUpload, FiImage, FiDollarSign, FiHome, FiMapPin } from 'react-icons/f
 import { useOneChainWallet } from '@/hooks/useOneChainWallet';
 import { oneChainService } from '@/services/onechain';
 import { Transaction } from '@mysten/sui/transactions';
-import { SuiClient } from '@mysten/sui.js/client';
+import { SuiClient } from '@mysten/sui/client';
 
 interface PropertyFormData {
   name: string;
@@ -190,6 +190,29 @@ const PropertyCreationForm: React.FC = () => {
       const account = await oneChainService.getConnectedAccount();
       if (!account) {
         throw new Error('Please connect your wallet first');
+      }
+
+      // Check OCT balance before proceeding
+      const client = new SuiClient({
+        url: process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443'
+      });
+
+      const balance = await client.getBalance({
+        owner: account.address,
+        coinType: '0x2::oct::OCT'
+      });
+
+      const balanceInOCT = parseInt(balance.totalBalance) / 1_000_000_000;
+      
+      if (balanceInOCT < 0.1) {
+        toast({
+          title: 'Insufficient OCT Balance',
+          description: `You need at least 0.1 OCT for gas fees. Current balance: ${balanceInOCT.toFixed(4)} OCT. Get OCT from the faucet: https://faucet-testnet.onelabs.cc`,
+          status: 'error',
+          duration: 10000,
+          isClosable: true,
+        });
+        return;
       }
 
       // Create transaction using OneChain service
