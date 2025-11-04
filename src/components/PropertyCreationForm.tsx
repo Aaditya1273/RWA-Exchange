@@ -186,14 +186,12 @@ const PropertyCreationForm: React.FC = () => {
     setIsCreating(true);
 
     try {
-      // Get connected wallet account
-      const account = await oneChainService.getConnectedAccount();
-      console.log('Connected account:', account);
-      
+      // Use account from hook (already connected)
       if (!account || !account.address) {
         throw new Error('Please connect your wallet first');
       }
 
+      console.log('Connected account from hook:', account);
       console.log('Using sender address:', account.address);
 
       // Check OCT balance before proceeding
