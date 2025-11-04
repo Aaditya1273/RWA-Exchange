@@ -1,26 +1,23 @@
 import { NextResponse } from 'next/server';
-import { investmentDB } from '@/services/database';
 
-// GET investments by investor address
+// NOTE: This API route is deprecated
+// Use propertyContractService.getUserInvestments() for real blockchain data
+
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const investor = searchParams.get('investor');
-
-    if (!investor) {
-      return NextResponse.json(
-        { success: false, error: 'Investor address required' },
-        { status: 400 }
-      );
-    }
-
-    const investments = investmentDB.getByInvestor(investor);
-    return NextResponse.json({ success: true, data: investments });
-  } catch (error) {
-    console.error('Error fetching investments:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch investments' },
-      { status: 500 }
+      { 
+        success: false, 
+        error: 'This API endpoint is deprecated. Use propertyContractService.getUserInvestments() for blockchain data.',
+        deprecated: true
+      },
+      { status: 410 }
+    );
+  } catch (error) {
+    console.error('Deprecated API route called:', error);
+    return NextResponse.json(
+      { success: false, error: 'This API endpoint is deprecated.', deprecated: true },
+      { status: 410 }
     );
   }
 }
