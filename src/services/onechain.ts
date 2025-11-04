@@ -73,6 +73,21 @@ class OneChainService {
   }
 
   /**
+   * Get currently connected account
+   */
+  async getConnectedAccount(): Promise<WalletAccount | null> {
+    const account = oneChainWalletStandardService.getConnectedAccount();
+    if (!account) {
+      return null;
+    }
+    return {
+      address: account.address,
+      publicKey: account.publicKey,
+      chains: account.chains
+    };
+  }
+
+  /**
    * Legacy method for backward compatibility
    */
   async connectExtensionWallet(): Promise<WalletAccount | null> {
