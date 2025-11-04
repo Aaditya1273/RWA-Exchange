@@ -1,7 +1,7 @@
 import { SuiClient } from '@mysten/sui/client';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { Transaction } from '@mysten/sui/transactions';
-import { fromB64 } from '@mysten/sui/utils';
+import { fromB64, toB64 } from '@mysten/sui/utils';
 import { ZkLoginData } from './zklogin';
 
 export interface WalletAccount {
@@ -213,16 +213,13 @@ class OneChainService {
       const txBytes = await transactionBlock.build({ client: this.suiClient });
       
       // Sign with ephemeral key
-      const signature = await zkLoginData.ephemeralKeyPair.signTransaction(txBytes);
+      const signatureBytes = await zkLoginData.ephemeralKeyPair.sign(txBytes);
+      const signature = toB64(signatureBytes);
       
       // Execute transaction
       const result = await this.suiClient.executeTransactionBlock({
         transactionBlock: txBytes,
-        signature: [
-          signature,
-          zkLoginData.zkProof,
-          zkLoginData.userSalt
-        ],
+        signature: signature,
         options: {
           showEffects: true,
           showObjectChanges: true,
