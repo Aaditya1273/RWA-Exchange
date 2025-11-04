@@ -1,7 +1,6 @@
-import { SuiClient } from '@mysten/sui.js/client';
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { SuiClient } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
-import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 
 export interface WalletStandardAccount {
   address: string;
@@ -59,65 +58,6 @@ class OneChainWalletStandardService {
     this.suiClient = new SuiClient({ url: rpcUrl });
   }
 
-  /**
-   * Convert TransactionBlock to Transaction format for wallet compatibility
-   */
-  private convertTransactionBlockToTransaction(txb: TransactionBlock): Transaction {
-    try {
-      // Create a new Transaction and rebuild it with the same operations
-      const tx = new Transaction();
-      
-      // Get the transaction data from TransactionBlock
-      const txData = (txb as any).blockData;
-      
-      if (txData && txData.transactions) {
-        // Copy each transaction operation
-        for (const transaction of txData.transactions) {
-          if (transaction.kind === 'MoveCall') {
-            tx.moveCall({
-              target: transaction.target,
-              arguments: transaction.arguments,
-              typeArguments: transaction.typeArguments,
-            });
-          } else if (transaction.kind === 'SplitCoins') {
-            tx.splitCoins(transaction.coin, transaction.amounts);
-          } else if (transaction.kind === 'TransferObjects') {
-            tx.transferObjects(transaction.objects, transaction.address);
-          }
-          // Add other transaction types as needed
-        }
-      }
-      
-      // Copy gas configuration
-      if (txData && txData.gasConfig) {
-        if (txData.gasConfig.budget) {
-          tx.setGasBudget(txData.gasConfig.budget);
-        }
-        if (txData.gasConfig.price) {
-          tx.setGasPrice(txData.gasConfig.price);
-        }
-      }
-      
-      console.log('Transaction converted successfully');
-      return tx;
-    } catch (error) {
-      console.warn('Transaction conversion failed, creating simple transaction:', error);
-      
-      // Fallback: create a simple transaction that might work
-      const tx = new Transaction();
-      try {
-        // Try to copy basic properties
-        const serialized = (txb as any).serialize?.();
-        if (serialized) {
-          (tx as any).blockData = serialized;
-        }
-      } catch (serializeError) {
-        console.warn('Serialization fallback failed:', serializeError);
-      }
-      
-      return tx;
-    }
-  }
 
   /**
    * Check if OneChain wallet extension is available
@@ -356,9 +296,9 @@ class OneChainWalletStandardService {
     const txOptions = options || { showEffects: true, showObjectChanges: true };
 
     try {
-      // Verify sender is set before building
+      // Verify sender is set before proceeding
       const txData = (transaction as any).getData?.();
-      console.log('Transaction data before build:', {
+      console.log('Transaction data before execution:', {
         sender: txData?.sender,
         gasData: txData?.gasData
       });
@@ -369,23 +309,13 @@ class OneChainWalletStandardService {
         transaction.setSender(this.connectedAccount.address);
       }
 
-      // Build transaction bytes - OneWallet needs this to display properly
-      console.log('Building transaction bytes for OneWallet...');
-      const txBytes = await transaction.build({ 
-        client: this.suiClient as any
-      });
-      console.log('Transaction built successfully, bytes length:', txBytes.length);
-
-      // Method 1: Try Wallet Standard feature with transaction bytes
+      // Method 1: Try passing Transaction object directly - let wallet handle building
       if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
         try {
-          console.log('Attempting Wallet Standard signAndExecuteTransaction with bytes...');
+          console.log('Attempting Wallet Standard with Transaction object (wallet will build)...');
           
           const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
-            transaction: {
-              kind: 'bytes',
-              data: txBytes
-            } as any,
+            transaction: transaction,
             account: this.connectedAccount,
             chain: 'sui:testnet',
             options: txOptions,
@@ -394,7 +324,7 @@ class OneChainWalletStandardService {
           console.log('✅ Transaction executed via Wallet Standard!', result);
           return result;
         } catch (standardError: any) {
-          console.warn('Wallet Standard with bytes failed:', standardError);
+          console.warn('Wallet Standard failed:', standardError);
           
           // Check if user rejected
           if (standardError.message?.includes('rejected') || 
@@ -407,41 +337,10 @@ class OneChainWalletStandardService {
         }
       }
 
-      // Method 2: Try direct wallet execution with bytes
+      // Method 2: Try direct wallet with Transaction object
       if ((this.wallet as any).signAndExecuteTransaction) {
         try {
-          console.log('Attempting wallet signAndExecuteTransaction with bytes...');
-          
-          const result = await (this.wallet as any).signAndExecuteTransaction({
-            transaction: {
-              kind: 'bytes',
-              data: txBytes
-            },
-            account: this.connectedAccount,
-            chain: 'sui:testnet',
-            options: txOptions,
-          });
-          
-          console.log('✅ Transaction executed successfully!', result);
-          return result;
-        } catch (walletError: any) {
-          console.warn('Wallet signAndExecuteTransaction with bytes failed:', walletError);
-          
-          // Check if user rejected
-          if (walletError.message?.includes('rejected') || 
-              walletError.message?.includes('denied') || 
-              walletError.code === 4001) {
-            throw new Error('Transaction was rejected by user');
-          }
-          
-          console.log('Trying legacy method...');
-        }
-      }
-
-      // Method 3: Try with Transaction object directly (fallback)
-      if ((this.wallet as any).signAndExecuteTransaction) {
-        try {
-          console.log('Attempting wallet signAndExecuteTransaction with Transaction object...');
+          console.log('Attempting direct wallet with Transaction object...');
           
           const result = await (this.wallet as any).signAndExecuteTransaction({
             transaction: transaction,
@@ -450,10 +349,10 @@ class OneChainWalletStandardService {
             options: txOptions,
           });
           
-          console.log('✅ Transaction executed with Transaction object!', result);
+          console.log('✅ Transaction executed successfully!', result);
           return result;
         } catch (walletError: any) {
-          console.warn('Wallet signAndExecuteTransaction with object failed:', walletError);
+          console.warn('Direct wallet failed:', walletError);
           
           // Check if user rejected
           if (walletError.message?.includes('rejected') || 
@@ -461,7 +360,36 @@ class OneChainWalletStandardService {
               walletError.code === 4001) {
             throw new Error('Transaction was rejected by user');
           }
+          
+          console.log('Trying to build transaction ourselves...');
         }
+      }
+
+      // Method 3: Build transaction bytes ourselves as last resort
+      try {
+        console.log('Building transaction bytes ourselves...');
+        const txBytes = await transaction.build({ 
+          client: this.suiClient as any
+        });
+        console.log('Transaction built successfully, bytes length:', txBytes.length);
+
+        if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
+          const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
+            transaction: {
+              kind: 'bytes',
+              data: txBytes
+            } as any,
+            account: this.connectedAccount,
+            chain: 'sui:testnet',
+            options: txOptions,
+          });
+          
+          console.log('✅ Transaction executed with built bytes!', result);
+          return result;
+        }
+      } catch (buildError: any) {
+        console.error('Failed to build transaction:', buildError);
+        throw buildError;
       }
 
       // Method 3: Development fallback (MOCK - NOT REAL)
