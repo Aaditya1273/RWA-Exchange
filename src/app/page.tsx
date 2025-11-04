@@ -350,8 +350,8 @@ export default function Home() {
             >
               <Box position="relative" overflow="hidden">
                 <Image 
-                  src={item.thumbnail || item.imageUrl || item.thumbnailUrl} 
-                  alt={item.title || item.name}
+                  src={(item as any).imageUrl || (item as any).thumbnailUrl || '/placeholder-property.jpg'} 
+                  alt={(item as any).name || (item as any).title || 'Property'}
                   w="full"
                   h="240px"
                   objectFit="cover"
@@ -382,7 +382,7 @@ export default function Home() {
                     fontFamily="Outfit"
                     fontWeight="700"
                   >
-                    {item.title}
+                    {(item as any).name || 'Property'}
                   </Heading>
                   
                   <Text 
