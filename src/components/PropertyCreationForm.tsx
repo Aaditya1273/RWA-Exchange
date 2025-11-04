@@ -221,13 +221,27 @@ const PropertyCreationForm: React.FC = () => {
       // Create transaction using OneChain service
       const tx = new Transaction();
       
-      // Set sender (required for wallet to display transaction)
-      console.log('Setting transaction sender to:', account.address);
-      tx.setSender(account.address);
+      // CRITICAL: Set sender FIRST before any other operations
+      console.log('🔑 Account address:', account.address);
+      console.log('🔑 Account address type:', typeof account.address);
+      console.log('🔑 Account address length:', account.address?.length);
       
-      // Verify sender was set
+      if (!account.address || account.address.length === 0) {
+        throw new Error('Invalid account address');
+      }
+      
+      tx.setSender(account.address);
+      console.log('✅ Transaction sender set to:', account.address);
+      
+      // Verify sender was actually set
       const txData = (tx as any).getData?.();
-      console.log('Transaction sender after setSender:', txData?.sender);
+      console.log('📋 Transaction data after setSender:', txData);
+      console.log('📋 Sender in transaction:', txData?.sender);
+      
+      if (!txData?.sender) {
+        console.error('❌ CRITICAL: Sender was NOT set in transaction!');
+        throw new Error('Failed to set transaction sender');
+      }
       
       // Convert OCT to MIST (1 OCT = 1,000,000,000 MIST)
       const pricePerShareInMist = Math.floor(formData.pricePerShare * 1_000_000_000);
@@ -250,6 +264,10 @@ const PropertyCreationForm: React.FC = () => {
 
       // Set gas budget (required for wallet to display transaction)
       tx.setGasBudget(50_000_000); // 0.05 OCT
+      
+      // CRITICAL: Set gas owner (required for OneWallet to enable Sign button)
+      tx.setGasOwner(account.address);
+      console.log('✅ Gas owner set to:', account.address);
 
       // Execute transaction using OneChain service
       const result = await oneChainService.signAndExecuteTransaction(tx);

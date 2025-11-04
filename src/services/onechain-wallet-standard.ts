@@ -309,10 +309,12 @@ class OneChainWalletStandardService {
         transaction.setSender(this.connectedAccount.address);
       }
 
-      // Method 1: Try passing Transaction object directly - let wallet handle building
+      // OneWallet requires transaction to be passed with proper serialization
+      // Try Wallet Standard feature
       if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
         try {
-          console.log('Attempting Wallet Standard with Transaction object (wallet will build)...');
+          console.log('Attempting Wallet Standard signAndExecuteTransaction...');
+          console.log('Transaction has sender:', txData?.sender);
           
           const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
             transaction: transaction,
@@ -324,7 +326,7 @@ class OneChainWalletStandardService {
           console.log('✅ Transaction executed via Wallet Standard!', result);
           return result;
         } catch (standardError: any) {
-          console.warn('Wallet Standard failed:', standardError);
+          console.error('Wallet Standard failed with error:', standardError);
           
           // Check if user rejected
           if (standardError.message?.includes('rejected') || 
@@ -333,14 +335,19 @@ class OneChainWalletStandardService {
             throw new Error('Transaction was rejected by user');
           }
           
-          console.log('Trying alternative method...');
+          // If it's a gas error, throw it immediately
+          if (standardError.message?.includes('gas')) {
+            throw standardError;
+          }
+          
+          console.log('Trying direct wallet method...');
         }
       }
 
-      // Method 2: Try direct wallet with Transaction object
+      // Try direct wallet execution
       if ((this.wallet as any).signAndExecuteTransaction) {
         try {
-          console.log('Attempting direct wallet with Transaction object...');
+          console.log('Attempting direct wallet signAndExecuteTransaction...');
           
           const result = await (this.wallet as any).signAndExecuteTransaction({
             transaction: transaction,
@@ -352,7 +359,7 @@ class OneChainWalletStandardService {
           console.log('✅ Transaction executed successfully!', result);
           return result;
         } catch (walletError: any) {
-          console.warn('Direct wallet failed:', walletError);
+          console.error('Direct wallet failed with error:', walletError);
           
           // Check if user rejected
           if (walletError.message?.includes('rejected') || 
@@ -361,35 +368,8 @@ class OneChainWalletStandardService {
             throw new Error('Transaction was rejected by user');
           }
           
-          console.log('Trying to build transaction ourselves...');
+          throw walletError;
         }
-      }
-
-      // Method 3: Build transaction bytes ourselves as last resort
-      try {
-        console.log('Building transaction bytes ourselves...');
-        const txBytes = await transaction.build({ 
-          client: this.suiClient as any
-        });
-        console.log('Transaction built successfully, bytes length:', txBytes.length);
-
-        if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
-          const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
-            transaction: {
-              kind: 'bytes',
-              data: txBytes
-            } as any,
-            account: this.connectedAccount,
-            chain: 'sui:testnet',
-            options: txOptions,
-          });
-          
-          console.log('✅ Transaction executed with built bytes!', result);
-          return result;
-        }
-      } catch (buildError: any) {
-        console.error('Failed to build transaction:', buildError);
-        throw buildError;
       }
 
       // Method 3: Development fallback (MOCK - NOT REAL)
