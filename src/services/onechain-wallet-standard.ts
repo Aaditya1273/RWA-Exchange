@@ -1,6 +1,7 @@
-import { SuiClient } from '@mysten/sui/client';
+import { SuiClient } from '@mysten/sui.js/client';
+import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { Transaction } from '@mysten/sui/transactions';
-import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
 
 export interface WalletStandardAccount {
   address: string;
@@ -56,6 +57,66 @@ class OneChainWalletStandardService {
   constructor() {
     const rpcUrl = process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443';
     this.suiClient = new SuiClient({ url: rpcUrl });
+  }
+
+  /**
+   * Convert TransactionBlock to Transaction format for wallet compatibility
+   */
+  private convertTransactionBlockToTransaction(txb: TransactionBlock): Transaction {
+    try {
+      // Create a new Transaction and rebuild it with the same operations
+      const tx = new Transaction();
+      
+      // Get the transaction data from TransactionBlock
+      const txData = (txb as any).blockData;
+      
+      if (txData && txData.transactions) {
+        // Copy each transaction operation
+        for (const transaction of txData.transactions) {
+          if (transaction.kind === 'MoveCall') {
+            tx.moveCall({
+              target: transaction.target,
+              arguments: transaction.arguments,
+              typeArguments: transaction.typeArguments,
+            });
+          } else if (transaction.kind === 'SplitCoins') {
+            tx.splitCoins(transaction.coin, transaction.amounts);
+          } else if (transaction.kind === 'TransferObjects') {
+            tx.transferObjects(transaction.objects, transaction.address);
+          }
+          // Add other transaction types as needed
+        }
+      }
+      
+      // Copy gas configuration
+      if (txData && txData.gasConfig) {
+        if (txData.gasConfig.budget) {
+          tx.setGasBudget(txData.gasConfig.budget);
+        }
+        if (txData.gasConfig.price) {
+          tx.setGasPrice(txData.gasConfig.price);
+        }
+      }
+      
+      console.log('Transaction converted successfully');
+      return tx;
+    } catch (error) {
+      console.warn('Transaction conversion failed, creating simple transaction:', error);
+      
+      // Fallback: create a simple transaction that might work
+      const tx = new Transaction();
+      try {
+        // Try to copy basic properties
+        const serialized = (txb as any).serialize?.();
+        if (serialized) {
+          (tx as any).blockData = serialized;
+        }
+      } catch (serializeError) {
+        console.warn('Serialization fallback failed:', serializeError);
+      }
+      
+      return tx;
+    }
   }
 
   /**
@@ -242,6 +303,7 @@ class OneChainWalletStandardService {
 
   /**
    * Sign and execute transaction using Wallet Standard or fallback methods
+   * Following OneChain documentation: Let the wallet handle building and gas selection
    */
   async signAndExecuteTransaction(
     transaction: Transaction,
@@ -251,184 +313,72 @@ class OneChainWalletStandardService {
       throw new Error('Wallet not connected');
     }
 
-    // Helper function to check if error is user rejection
-    const isUserRejection = (error: any): boolean => {
-      return error.message?.includes('rejected') || 
-             error.message?.includes('denied') || 
-             error.message?.includes('cancelled') ||
-             error.message?.includes('User rejected') ||
-             error.code === 4001 || // Standard rejection code
-             error.code === -32603; // Another common rejection code
-    };
+    console.log('Executing transaction with OneChain wallet...');
+
+    const txOptions = options || { showEffects: true, showObjectChanges: true };
 
     try {
-      // Check wallet balance before attempting transaction (with fallback)
-      try {
-        // Get all coin balances to better detect testnet tokens
-        const allBalances = await this.suiClient.getAllBalances({
-          owner: this.connectedAccount.address,
-        });
-        
-        console.log('All wallet balances:', allBalances);
-        
-        const balance = await this.suiClient.getBalance({
-          owner: this.connectedAccount.address,
-        });
-        
-        const balanceAmount = parseInt(balance.totalBalance);
-        const balanceInOct = balanceAmount / 1_000_000_000;
-        console.log('Wallet balance:', balance.totalBalance, 'MIST', `(${balanceInOct} OCT)`);
-        
-        // Check if we have any OCT balance at all (including from different coin types)
-        const hasOctBalance = allBalances.some(b => 
-          b.coinType === '0x2::sui::SUI' && parseInt(b.totalBalance) > 0
-        );
-        
-        console.log('Has OCT balance:', hasOctBalance, 'Total OCT:', balanceInOct);
-        
-        // Very minimal balance requirement - just need gas for transaction
-        if (balanceAmount < 100_000 && !hasOctBalance) { // Less than 0.0001 OCT
-          console.warn('Very low balance detected:', balanceAmount, 'MIST');
-          
-          // In development or testnet, show warning but allow transaction to proceed
-          if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_ONECHAIN_NETWORK === 'testnet') {
-            console.warn('Testnet/Development mode: Proceeding with transaction despite low balance');
-          } else {
-            // Show a more helpful error message
-            throw new Error(`Insufficient balance for gas fees. Current balance: ${balanceInOct.toFixed(6)} OCT. Please get testnet OCT from the OneChain faucet.`);
-          }
-        } else {
-          console.log('Balance check passed:', balanceInOct, 'OCT available for gas');
-        }
-      } catch (balanceError) {
-        console.warn('Balance check failed, proceeding with transaction anyway:', balanceError);
-        // Continue with transaction - let the blockchain handle insufficient balance errors naturally
-        // This allows the transaction to proceed and show the actual blockchain error if needed
-      }
-
-      const txOptions = options || { showEffects: true, showObjectChanges: true };
-      let userRejected = false;
-      let lastError: any = null;
-
-      // Method 1: Try Wallet Standard signAndExecuteTransaction
-      if (this.wallet.features && this.wallet.features['sui:signAndExecuteTransaction']) {
-        try {
-          console.log('Attempting to sign transaction with Wallet Standard...');
-          
-          // Ensure transaction has proper gas budget
-          if (!transaction.blockData.gasConfig.budget) {
-            transaction.setGasBudget(10_000_000);
-          }
-          
-          const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
-            transaction,
-            account: this.connectedAccount,
-            options: txOptions,
-          });
-          
-          console.log('Transaction signed and executed successfully:', result);
-          return result;
-        } catch (executeError) {
-          console.warn('signAndExecuteTransaction failed:', executeError);
-          lastError = executeError;
-          
-          // If it's a user rejection, mark it and don't try other methods
-          if (isUserRejection(executeError)) {
-            userRejected = true;
-          }
-        }
-      }
-
-      // If user rejected, don't try other methods
-      if (userRejected) {
-        throw new Error('Transaction was rejected by user');
-      }
-
-      // Method 2: Fallback - Sign transaction and execute separately
-      if (this.wallet.features && this.wallet.features['sui:signTransaction']) {
-        try {
-          // Sign the transaction
-          const signResult = await this.wallet.features['sui:signTransaction'].signTransaction({
-            transaction,
-            account: this.connectedAccount,
-          });
-
-          // Execute the signed transaction using SuiClient
-          const executeResult = await this.suiClient.executeTransactionBlock({
-            transactionBlock: signResult.signedTransaction,
-            signature: signResult.signature,
-            options: txOptions,
-          });
-
-          return executeResult;
-        } catch (signExecuteError) {
-          console.warn('Sign and separate execute failed:', signExecuteError);
-          lastError = signExecuteError;
-          
-          // Check for user rejection
-          if (isUserRejection(signExecuteError)) {
-            userRejected = true;
-          }
-        }
-      }
-
-      // If user rejected, don't try other methods
-      if (userRejected) {
-        throw new Error('Transaction was rejected by user');
-      }
-
-      // Method 3: Try direct wallet methods (legacy support)
-      if ((this.wallet as any).signAndExecuteTransactionBlock) {
-        try {
-          const result = await (this.wallet as any).signAndExecuteTransactionBlock({
-            transactionBlock: transaction,
-            options: txOptions,
-          });
-          return result;
-        } catch (legacyError) {
-          console.warn('Legacy signAndExecuteTransactionBlock failed:', legacyError);
-          lastError = legacyError;
-          
-          // Check for user rejection
-          if (isUserRejection(legacyError)) {
-            userRejected = true;
-          }
-        }
-      }
-
-      // If user rejected, don't try other methods
-      if (userRejected) {
-        throw new Error('Transaction was rejected by user');
-      }
-
-      // Method 4: Try even more legacy methods
+      // Method 1: Try direct wallet execution (recommended by OneChain docs)
+      // Let the wallet handle transaction building, gas selection, and sender setting
       if ((this.wallet as any).signAndExecuteTransaction) {
         try {
+          console.log('Attempting wallet signAndExecuteTransaction...');
+          
           const result = await (this.wallet as any).signAndExecuteTransaction({
-            transaction,
+            transaction: transaction,
+            account: this.connectedAccount,
+            chain: 'sui:testnet',
             options: txOptions,
           });
-          return result;
-        } catch (legacyError2) {
-          console.warn('Legacy signAndExecuteTransaction failed:', legacyError2);
-          lastError = legacyError2;
           
-          // Check for user rejection
-          if (isUserRejection(legacyError2)) {
-            userRejected = true;
+          console.log('✅ Transaction executed successfully!', result);
+          return result;
+        } catch (walletError: any) {
+          console.warn('Wallet signAndExecuteTransaction failed:', walletError);
+          
+          // Check if user rejected
+          if (walletError.message?.includes('rejected') || 
+              walletError.message?.includes('denied') || 
+              walletError.code === 4001) {
+            throw new Error('Transaction was rejected by user');
+          }
+          
+          // Try next method
+          console.log('Trying alternative method...');
+        }
+      }
+
+      // Method 2: Try Wallet Standard feature
+      if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
+        try {
+          console.log('Attempting Wallet Standard signAndExecuteTransaction...');
+          
+          const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
+            transaction: transaction,
+            account: this.connectedAccount,
+            options: txOptions,
+          });
+          
+          console.log('✅ Transaction executed via Wallet Standard!', result);
+          return result;
+        } catch (standardError: any) {
+          console.warn('Wallet Standard failed:', standardError);
+          
+          // Check if user rejected
+          if (standardError.message?.includes('rejected') || 
+              standardError.message?.includes('denied') || 
+              standardError.code === 4001) {
+            throw new Error('Transaction was rejected by user');
           }
         }
       }
 
-      // If user rejected, don't use mock fallback
-      if (userRejected) {
-        throw new Error('Transaction was rejected by user');
-      }
-
-      // Method 5: Mock execution for development/testing - ONLY if no user rejection
+      // Method 3: Development fallback (MOCK - NOT REAL)
       if (process.env.NODE_ENV === 'development') {
-        console.warn('No transaction execution method available, using mock response for development');
-        console.warn('Note: This is a mock transaction for development purposes only');
+        console.warn('⚠️ NO REAL TRANSACTION EXECUTION AVAILABLE');
+        console.warn('⚠️ Using MOCK response for development only');
+        console.warn('⚠️ This is NOT a real blockchain transaction!');
+        
         return {
           digest: 'mock-transaction-' + Date.now(),
           effects: {
@@ -436,18 +386,15 @@ class OneChainWalletStandardService {
             gasUsed: { computationCost: '1000', storageCost: '1000', storageRebate: '0' }
           },
           objectChanges: [],
-          balanceChanges: []
+          balanceChanges: [],
+          __MOCK__: true, // Flag to indicate this is not real
         };
       }
 
-      // If we have a specific error, throw it; otherwise throw generic error
-      if (lastError) {
-        throw lastError;
-      }
+      throw new Error('Wallet does not support transaction execution. Please ensure OneChain wallet is properly installed and connected.');
       
-      throw new Error('Wallet does not support any known transaction execution methods');
     } catch (error) {
-      console.error('Failed to sign and execute transaction:', error);
+      console.error('❌ Transaction execution failed:', error);
       throw error;
     }
   }
@@ -460,7 +407,7 @@ class OneChainWalletStandardService {
   async createTransactionForWallet(
     recipient: string,
     amount: string,
-    coinType: string = '0x2::sui::SUI' // OCT uses same coin type as SUI on OneChain
+    coinType: string = '0x2::oct::OCT' // OneChain native OCT token
   ): Promise<Transaction> {
     const tx = new Transaction();
     
@@ -526,8 +473,9 @@ class OneChainWalletStandardService {
   ): Promise<Transaction> {
     try {
       // Build transaction with onlyTransactionKind flag
+      // Type assertion needed due to SuiClient compatibility
       const kindBytes = await transaction.build({ 
-        client: this.suiClient, 
+        client: this.suiClient as any, 
         onlyTransactionKind: true 
       });
       
@@ -611,7 +559,18 @@ class OneChainWalletStandardService {
     // Also check if account has a valid address
     const hasValidAddress = !!(this.connectedAccount?.address && this.connectedAccount.address.length > 0);
     
-    return hasWallet && hasAccount && hasValidAddress;
+    const connected = hasWallet && hasAccount && hasValidAddress;
+    
+    // Debug logging
+    console.log('Wallet connection check:', {
+      hasWallet,
+      hasAccount,
+      hasValidAddress,
+      connected,
+      address: this.connectedAccount?.address
+    });
+    
+    return connected;
   }
 
   /**

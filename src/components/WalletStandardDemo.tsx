@@ -187,7 +187,7 @@ export const WalletStandardDemo: React.FC = () => {
               <strong>Address:</strong> {account?.address}
             </p>
             <p className="text-sm text-gray-600 mb-1">
-              <strong>Balance:</strong> {parseFloat(balance) / 1e9} SUI
+              <strong>Balance:</strong> {parseFloat(balance) / 1e9} OCT
             </p>
             <div className="flex space-x-2 mt-3">
               <button

@@ -25,7 +25,7 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useWalletStandard } from "@/hooks/useWalletStandard";
-import { propertyManager } from "@/services/propertyManager";
+import { propertyContractService } from "@/services/propertyContract";
 
 interface InvestmentModalProps {
   isOpen: boolean;
@@ -46,7 +46,7 @@ export function InvestmentModal({
   availableShares,
   totalShares,
 }: InvestmentModalProps) {
-  const { account, isConnected, balance } = useWalletStandard();
+  const { account, isConnected, balance, signAndExecuteTransaction } = useWalletStandard();
   const toast = useToast();
   const [sharesToBuy, setSharesToBuy] = useState(1);
   const [isInvesting, setIsInvesting] = useState(false);
@@ -81,11 +81,6 @@ export function InvestmentModal({
     try {
       setProgress(30);
 
-      // Create temporary keypair (in production, use actual wallet keypair)
-      const keypair = new Ed25519Keypair();
-
-      setProgress(50);
-
       toast({
         title: "Processing Investment",
         description: "Submitting transaction to blockchain...",
@@ -93,12 +88,17 @@ export function InvestmentModal({
         duration: 2000,
       });
 
-      // Call smart contract
+      setProgress(50);
+
+      // Create wallet service object for the contract
+      const walletService = {
+        signAndExecuteTransaction
+      };
+
+      // Call smart contract with wallet service
       const result = await propertyContractService.investInProperty(
         propertyId,
-        sharesToBuy,
-        totalCost,
-        keypair
+        sharesr
       );
 
       setProgress(90);
@@ -210,7 +210,7 @@ export function InvestmentModal({
               <AlertIcon />
               <VStack align="start" spacing={1}>
                 <Text fontSize="sm" fontWeight="bold">
-                  Transaction Fee: ~0.05 SUI
+                  Transaction Fee: ~0.05 OCT
                 </Text>
                 <Text fontSize="xs">
                   You will receive an Investment NFT representing your {sharesToBuy} shares

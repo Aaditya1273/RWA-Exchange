@@ -101,7 +101,7 @@ export const OneChainWalletConnect: React.FC<OneChainWalletConnectProps> = ({
               {formatAddress(account.address)}
             </div>
             <div className="text-xs text-gray-500">
-              Balance: {parseFloat(account.balance || '0') / 1e9} SUI
+              Balance: {parseFloat(account.balance || '0') / 1e9} OCT
             </div>
           </div>
           

@@ -284,7 +284,7 @@ class OneChainService {
     sender: string,
     recipient: string,
     amount: string,
-    coinType: string = '0x2::sui::SUI'
+    coinType: string = '0x2::oct::OCT'
   ): Promise<Transaction> {
     const tx = new Transaction();
     

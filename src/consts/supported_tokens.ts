@@ -10,9 +10,9 @@ export type Token = {
  */
 export const SUPPORTED_TOKENS: Token[] = [
   {
-    tokenAddress: "0x0000000000000000000000000000000000000000", // Replace with actual SUI token address
-    symbol: "SUI",
-    icon: "/erc20-icons/sui.png",
+    tokenAddress: "0x2::oct::OCT", // OneChain OCT token address
+    symbol: "OCT",
+    icon: "/erc20-icons/oct.png",
   },
   {
     tokenAddress: "0x0000000000000000000000000000000000000000", // Replace with actual USDC on OneChain

@@ -49,7 +49,7 @@ export default function WalletDemoPage() {
           </h2>
           <ul className="space-y-2 text-yellow-800">
             <li>• OneChain wallet browser extension installed</li>
-            <li>• Wallet funded with SUI tokens for gas fees</li>
+            <li>• Wallet funded with OCT tokens for gas fees</li>
             <li>• Valid recipient addresses for testing transfers</li>
             <li>• RWA project addresses for investment testing</li>
           </ul>

@@ -2,13 +2,13 @@
 /// This module handles tokenization of real estate properties as NFTs
 /// with fractional ownership and investment capabilities
 module rwa_exchange::property_nft {
-    use sui::object::{Self, UID};
-    use sui::transfer;
-    use sui::tx_context::{Self, TxContext};
-    use sui::coin::{Self, Coin};
-    use sui::sui::SUI;
-    use sui::balance::{Self, Balance};
-    use sui::event;
+    use one::object::{Self, UID};
+    use one::transfer;
+    use one::tx_context::{Self, TxContext};
+    use one::coin::{Self, Coin};
+    use one::oct::OCT;
+    use one::balance::{Self, Balance};
+    use one::event;
     use std::string::{Self, String};
     use std::vector;
 
@@ -36,7 +36,7 @@ module rwa_exchange::property_nft {
         rental_yield: String,
         is_active: bool,
         owner: address,
-        treasury: Balance<SUI>,
+        treasury: Balance<OCT>,
     }
 
     /// Investment record for tracking individual investments
@@ -139,7 +139,7 @@ module rwa_exchange::property_nft {
     /// Invest in a property by purchasing shares
     public entry fun invest(
         property: &mut PropertyNFT,
-        payment: Coin<SUI>,
+        payment: Coin<OCT>,
         shares_to_buy: u64,
         ctx: &mut TxContext
     ) {
@@ -188,7 +188,7 @@ module rwa_exchange::property_nft {
     public entry fun distribute_dividends(
         property: &mut PropertyNFT,
         _cap: &PropertyCap,
-        dividend_amount: Coin<SUI>,
+        dividend_amount: Coin<OCT>,
         ctx: &mut TxContext
     ) {
         assert!(property.owner == tx_context::sender(ctx), ENotOwner);
@@ -283,7 +283,7 @@ module rwa_exchange::property_nft {
     /// Buy listed investment shares
     public entry fun buy_listed_investment(
         investment: Investment,
-        payment: Coin<SUI>,
+        payment: Coin<OCT>,
         seller: address,
         ctx: &mut TxContext
     ) {

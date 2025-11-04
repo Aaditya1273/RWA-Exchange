@@ -216,16 +216,24 @@ class OneChainService {
   }
 
   /**
-   * Sign and execute transaction using Wallet Standard
+   * Sign and execute transaction using connected wallet
    */
   async signAndExecuteTransaction(
     transaction: Transaction,
     options?: { showEffects?: boolean; showObjectChanges?: boolean }
   ): Promise<any> {
+    // Get connected account directly to check
+    const account = oneChainWalletStandardService.getConnectedAccount();
+    
+    console.log('OneChainService: Checking wallet connection before transaction');
+    console.log('Connected account:', account);
+    
     if (!oneChainWalletStandardService.isConnected()) {
-      throw new Error('Wallet not connected');
+      console.error('Wallet not connected! Account:', account);
+      throw new Error('Wallet not connected. Please connect your wallet first.');
     }
 
+    console.log('OneChainService: Wallet is connected, executing transaction...');
     return await oneChainWalletStandardService.signAndExecuteTransaction(transaction, options);
   }
 
@@ -404,7 +412,7 @@ class OneChainService {
     sender: string,
     recipient: string,
     amount: string,
-    coinType: string = '0x2::sui::SUI' // OCT uses same coin type as SUI on OneChain
+    coinType: string = '0x2::oct::OCT' // OneChain native OCT token
   ): Promise<Transaction> {
     // Use the Wallet Standard service to create the transaction
     return await oneChainWalletStandardService.createTransactionForWallet(
@@ -421,7 +429,7 @@ class OneChainService {
   async createAndExecuteTransaction(
     recipient: string,
     amount: string,
-    coinType: string = '0x2::sui::SUI' // OCT uses same coin type as SUI on OneChain
+    coinType: string = '0x2::oct::OCT' // OneChain native OCT token
   ): Promise<any> {
     const tx = await this.createTransaction('', recipient, amount, coinType);
     return await this.signAndExecuteTransaction(tx);

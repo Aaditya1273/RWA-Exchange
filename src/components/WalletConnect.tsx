@@ -103,7 +103,7 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
               {formatAddress(account.address)}
             </div>
             <div className="wallet-balance text-sm text-gray-500">
-              Balance: {parseFloat(account.balance || '0') / 1e9} SUI
+              Balance: {parseFloat(account.balance || '0') / 1e9} OCT
             </div>
           </div>
 

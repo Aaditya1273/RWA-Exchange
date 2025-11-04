@@ -29,13 +29,22 @@ export const useOneChainWallet = (): UseOneChainWalletReturn => {
 
   const isConnected = !!account;
 
-  // Load saved wallet from localStorage on mount
+  // Load saved wallet from localStorage on mount and reconnect
   useEffect(() => {
     const savedWallet = localStorage.getItem('onechain_wallet');
     if (savedWallet) {
       try {
         const walletData = JSON.parse(savedWallet);
         setAccount(walletData);
+        
+        // IMPORTANT: Reconnect the wallet service to maintain connection state
+        console.log('useOneChainWallet: Found saved wallet, reconnecting...');
+        oneChainService.connectWalletExtension().then(() => {
+          console.log('useOneChainWallet: Wallet service reconnected');
+        }).catch((err) => {
+          console.warn('useOneChainWallet: Failed to reconnect wallet service:', err);
+          // Don't clear the account - UI can still show it
+        });
       } catch (err) {
         console.error('Error loading saved wallet:', err);
         localStorage.removeItem('onechain_wallet');
@@ -48,8 +57,13 @@ export const useOneChainWallet = (): UseOneChainWalletReturn => {
     setError(null);
 
     try {
+      console.log('useOneChainWallet: Connecting to wallet extension...');
+      
       // Use the proper wallet extension connection method
+      // This will set the connectedAccount in oneChainWalletStandardService
       const extensionAccount = await oneChainService.connectWalletExtension();
+      
+      console.log('useOneChainWallet: Wallet connected:', extensionAccount.address);
       
       // Get balance
       const balance = await oneChainService.getBalance(extensionAccount.address);
@@ -60,9 +74,12 @@ export const useOneChainWallet = (): UseOneChainWalletReturn => {
       // Save to localStorage
       localStorage.setItem('onechain_wallet', JSON.stringify(accountWithBalance));
       
+      console.log('useOneChainWallet: Connection complete and saved');
+      
       return accountWithBalance;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to connect wallet extension';
+      console.error('useOneChainWallet: Connection failed:', errorMessage);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {

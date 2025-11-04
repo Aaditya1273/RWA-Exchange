@@ -26,7 +26,7 @@ import {
 import { useState } from "react";
 import { useOneChainWallet } from "@/hooks/useOneChainWallet";
 import { propertyContractService, PropertyData } from "@/services/propertyContract";
-import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
+import { oneChainService } from "@/services/onechain";
 import { useRouter } from "next/navigation";
 
 export function CreatePropertyForm() {
@@ -73,12 +73,6 @@ export function CreatePropertyForm() {
 
       setProgress(30);
 
-      // For demo: Create a temporary keypair
-      // In production, this should use the actual wallet's keypair
-      const keypair = new Ed25519Keypair();
-      
-      setProgress(50);
-
       toast({
         title: "Creating Property NFT",
         description: "Submitting transaction to blockchain...",
@@ -86,10 +80,12 @@ export function CreatePropertyForm() {
         duration: 2000,
       });
 
-      // Call smart contract
+      setProgress(50);
+
+      // Call smart contract with OneChain service
       const result = await propertyContractService.createProperty(
         formData,
-        keypair
+        oneChainService
       );
 
       setProgress(90);
@@ -275,7 +271,7 @@ export function CreatePropertyForm() {
               <AlertIcon />
               <VStack align="start" spacing={1}>
                 <Text fontSize="sm" fontWeight="bold">
-                  Transaction Fee: ~0.05 SUI
+                  Transaction Fee: ~0.05 OCT
                 </Text>
                 <Text fontSize="xs">
                   Your property will be minted as an NFT with {formData.totalShares} fractional shares

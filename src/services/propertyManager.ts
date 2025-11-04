@@ -1,5 +1,5 @@
-import { SuiClient } from '@mysten/sui/client';
-import { Transaction } from '@mysten/sui/transactions';
+import { SuiClient } from '@mysten/sui.js/client';
+import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { oneChainWalletStandardService } from './onechain-wallet-standard';
 
 const RPC_URL = process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443';
@@ -64,7 +64,7 @@ export class PropertyManager {
         throw new Error('Wallet not connected');
       }
 
-      const tx = new Transaction();
+      const tx = new TransactionBlock();
 
       // Call create_property function
       tx.moveCall({
@@ -127,7 +127,7 @@ export class PropertyManager {
         throw new Error('Wallet not connected');
       }
 
-      const tx = new Transaction();
+      const tx = new TransactionBlock();
 
       // Convert OCT to MIST
       const paymentInMist = paymentAmountInOCT * 1_000_000_000;
@@ -327,7 +327,7 @@ export class PropertyManager {
         throw new Error('Wallet not connected');
       }
 
-      const tx = new Transaction();
+      const tx = new TransactionBlock();
 
       tx.moveCall({
         target: `${PACKAGE_ID}::property_nft::transfer_investment`,
@@ -372,7 +372,7 @@ export class PropertyManager {
         throw new Error('Wallet not connected');
       }
 
-      const tx = new Transaction();
+      const tx = new TransactionBlock();
 
       tx.moveCall({
         target: `${PACKAGE_ID}::property_nft::claim_dividends`,

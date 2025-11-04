@@ -503,7 +503,7 @@ export function OneChainWallet({ isOpen, onClose }: OneChainWalletProps) {
                     <Text fontWeight="bold" color="gray.700" fontSize="sm">Balance:</Text>
                     <HStack spacing={2}>
                       <Text fontSize="md" fontWeight="bold" color="gray.800">
-                        {formatBalance(account?.balance || "0")} SUI
+                        {formatBalance(account?.balance || "0")} OCT
                       </Text>
                       <Tooltip label="Refresh balance">
                         <IconButton

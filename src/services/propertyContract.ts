@@ -1,6 +1,7 @@
-import { SuiClient } from '@mysten/sui/client';
+import { SuiClient } from '@mysten/sui.js/client';
+import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { Transaction } from '@mysten/sui/transactions';
-import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
 
 const RPC_URL = process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443';
 const PACKAGE_ID = process.env.NEXT_PUBLIC_RWA_PACKAGE_ID || '0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2';
@@ -53,21 +54,22 @@ export class PropertyContractService {
     walletService?: any
   ): Promise<CreatePropertyResult> {
     try {
+      // Use the old Transaction class that the wallet expects
       const tx = new Transaction();
 
       // Call the create_property function with proper argument encoding
       tx.moveCall({
         target: `${PACKAGE_ID}::property_nft::create_property`,
         arguments: [
-          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.name))),
-          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.description))),
-          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.imageUrl))),
-          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.location))),
-          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.propertyType))),
+          tx.pure.string(propertyData.name),
+          tx.pure.string(propertyData.description),
+          tx.pure.string(propertyData.imageUrl),
+          tx.pure.string(propertyData.location),
+          tx.pure.string(propertyData.propertyType),
           tx.pure.u64(propertyData.totalValue),
           tx.pure.u64(propertyData.totalShares),
           tx.pure.u64(propertyData.pricePerShare),
-          tx.pure.vector('u8', Array.from(new TextEncoder().encode(propertyData.rentalYield))),
+          tx.pure.string(propertyData.rentalYield),
         ],
       });
 
@@ -85,6 +87,15 @@ export class PropertyContractService {
         });
       } else {
         throw new Error('Wallet service required for transaction signing');
+      }
+
+      // Check if this was a mock transaction
+      if (result.__MOCK__) {
+        console.warn('⚠️ MOCK TRANSACTION - Not a real blockchain transaction');
+        return {
+          success: false,
+          error: 'Transaction was mocked. OneChain wallet integration needs fixing for real transactions.',
+        };
       }
 
       // Extract property ID from object changes
@@ -216,9 +227,11 @@ export class PropertyContractService {
 
       tx.setGasBudget(30_000_000);
 
-      const result = await this.client.signAndExecuteTransaction({
+      // Note: This function uses keypair directly (not wallet service)
+      // For wallet integration, this should be updated to use walletService
+      const result = await this.client.signAndExecuteTransactionBlock({
         signer: keypair,
-        transaction: tx,
+        transactionBlock: tx as any, // Type assertion for Transaction compatibility
         options: {
           showEffects: true,
         },
