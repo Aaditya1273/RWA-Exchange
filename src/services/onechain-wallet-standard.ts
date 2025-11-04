@@ -351,16 +351,30 @@ class OneChainWalletStandardService {
 
     console.log('Executing transaction with OneChain wallet...');
     console.log('Transaction object:', transaction);
+    console.log('Connected account:', this.connectedAccount);
 
     const txOptions = options || { showEffects: true, showObjectChanges: true };
 
     try {
+      // Verify sender is set before building
+      const txData = (transaction as any).getData?.();
+      console.log('Transaction data before build:', {
+        sender: txData?.sender,
+        gasData: txData?.gasData
+      });
+
+      if (!txData?.sender) {
+        console.error('❌ Transaction sender is not set!');
+        console.log('Setting sender from connected account...');
+        transaction.setSender(this.connectedAccount.address);
+      }
+
       // Build transaction bytes - OneWallet needs this to display properly
       console.log('Building transaction bytes for OneWallet...');
       const txBytes = await transaction.build({ 
         client: this.suiClient as any
       });
-      console.log('Transaction built, bytes length:', txBytes.length);
+      console.log('Transaction built successfully, bytes length:', txBytes.length);
 
       // Method 1: Try Wallet Standard feature with transaction bytes
       if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
