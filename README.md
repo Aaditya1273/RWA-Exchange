@@ -389,8 +389,8 @@ flowchart TD
 
 ### Prerequisites
 - Node.js 18+ and npm installed
-- Sui CLI installed (for Move contract deployment)
-- OneChain testnet wallet with ONE tokens
+- OneChain CLI installed (for Move contract deployment)
+- OneChain testnet wallet with OCT tokens
 
 ### Deploy and Run in 5 Minutes
 
@@ -412,27 +412,27 @@ Required environment variables:
 # OneChain Configuration
 NEXT_PUBLIC_ONECHAIN_RPC_URL=https://rpc-testnet.onelabs.cc:443
 NEXT_PUBLIC_ONECHAIN_NETWORK=testnet
+NEXT_PUBLIC_RWA_PACKAGE_ID=YOUR_PACKAGE_ID
 ```
 
 #### 3. Deploy Move Package (If Needed)
 ```bash
 # Build Move package
-sui move build
+one move build
 
 # Deploy to OneChain testnet
-sui client publish --gas-budget 100000000
+one client publish --gas-budget 100000000
 
 # Save the Package ID from output
 ```
 
-**Existing Package ID**: `0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2`
 
 #### 4. Create a Property NFT
 ```bash
-sui client call \
-  --package 0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2 \
+one client call \
+  --package  \
   --module property_nft \
-  --function create_property \
+  --function create_property YOUR_PACKAGE_ID\
   --args "Sunset Villa Estate" "Luxury beachfront property" \
          "https://example.com/villa.jpg" "Miami Beach, FL" \
          "Residential" 1000000 10000 100 "8.5%" \
@@ -441,8 +441,8 @@ sui client call \
 
 #### 5. Invest in Property (Fractionalization)
 ```bash
-sui client call \
-  --package 0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2 \
+one client call \
+  --package YOUR_PACKAGE_ID \
   --module property_nft \
   --function invest \
   --args [PROPERTY_OBJECT_ID] [COIN_OBJECT_ID] 100 \
@@ -457,9 +457,10 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) to view the marketplace.
 
 ### Verify Deployment
-- **Package Explorer**: https://testnet-explorer.onechain.network/object/0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2
-- **Check Objects**: `sui client objects`
-- **View Transaction**: `sui client tx-block [TX_HASH]`
+- **Package Explorer**: https://onescan.cc/testnet/object/YOUR_PACKAGE_ID
+- **Check Objects**: `one client objects`
+- **View Transaction**: `one client tx-block [TX_HASH]`
+- **OneScan Explorer**: https://onescan.cc/testnet/home
 
 ---
 
@@ -551,114 +552,20 @@ If you encounter issues:
 3. Visit OneChain documentation: https://docs.onechain.network
 4. Open an issue on GitHub
 
----
-
-## Getting Started (Alternative Method)
-
-### 1. Install Dependencies
-```bash
-npm install
 ```
 
-### 2. Set Up Environment Variables
-Copy the example environment file and configure your thirdweb client ID:
-```bash
-cp .env.example .env.local
-```
 
-Edit `.env.local` and add your thirdweb client ID:
-```
-NEXT_PUBLIC_THIRDWEB_CLIENT_ID="your_thirdweb_client_id_here"
-```
-
-You can get a client ID from the [thirdweb dashboard](https://thirdweb.com/dashboard/settings/api-keys).
-
-### 3. Configure OneChain Network
-Add OneChain network configuration to your `.env.local`:
-```bash
-# OneChain Configuration
-NEXT_PUBLIC_ONECHAIN_NETWORK=testnet
-NEXT_PUBLIC_ONECHAIN_TESTNET_RPC_URL=https://testnet-rpc.onechain.network
-NEXT_PUBLIC_ONECHAIN_MAINNET_RPC_URL=https://rpc.onechain.network
-NEXT_PUBLIC_ONECHAIN_TESTNET_EXPLORER=https://testnet-explorer.onechain.network
-NEXT_PUBLIC_ONECHAIN_MAINNET_EXPLORER=https://explorer.onechain.network
-```
-
-### 4. Deploy Smart Contracts to OneChain (Optional)
-If you want to deploy your own contracts:
-```bash
-# Deploy to OneChain testnet
-npm run deploy:onechain-testnet
-
-# Deploy to OneChain mainnet
-npm run deploy:onechain-mainnet
-```
-
-### 5. Run the Development Server
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
-
-### 4. Connect Your Wallet
-- The application supports multiple wallet types through Thirdweb
-- Click "Connect Wallet" in the navigation bar
-- Choose from MetaMask, WalletConnect, Coinbase Wallet, and more
-- For mobile users, use the hamburger menu to access wallet connection
-
-### 5. Explore Features
-- **Homepage**: Overview of available assets and platform statistics
-- **Landing Page**: Detailed information about OneRWA platform
-- **Marketplace**: Browse and search all available tokenized assets
-- **Dashboard**: View your portfolio, holdings, and investment analytics
-
-### Quick Start (All-in-One)
-
-```bash
-# 1) Install
-npm install
-
-# 2) Configure env
-cp .env.example .env.local  # then edit .env.local
-
-# 3) Run
-npm run dev
-```
-
-## Customize Your Marketplace
-
-### 1. Supported Networks
-Deploy a [MarketplaceV3 contract](https://thirdweb.com/thirdweb.eth/MarketplaceV3) on each network you want to support. Add the desired chains to [`./src/consts/chains.ts`](./src/consts/chains.ts).
-
-[Learn more about thirdweb Chains](https://portal.thirdweb.com/typescript/v5/chain).
-
-### 2. Marketplace Contracts
-Add your deployed MarketplaceV3 contract addresses and their corresponding chains to [`/src/consts/marketplace_contracts.ts`](/src/consts/marketplace_contract.ts).
-
-### 3. Supported Currencies
-Configure the ERC20 tokens you want to support for payments in [`./src/consts/supported_tokens.ts`](./src/consts/supported_tokens.ts).
-
-## Learn More
-
-To learn more about thirdweb, take a look at the following resources:
-
-- [thirdweb Documentation](https://portal.thirdweb.com/) - learn about thirdweb features and API.
-- [thirdweb Discord](https://discord.gg/thirdweb) - join our community for support and questions.
-
-## Security
-
-If you discover a security vulnerability, please report it by emailing `security@thirdweb.com`.
 
 
 ## Project Structure
 
-- `contracts/` — Solidity contracts (`Fraction.sol`, `Fractionalizer.sol`, `PropertyNFT.sol`).
-- `scripts/deploy.ts` — Hardhat deployment script(s).
+- `sources/` — Move smart contracts (`property_nft.move`).
+- `scripts/` — Deployment scripts for OneChain.
 - `src/` — Next.js app and components.
-  - `src/app/` — Next.js routes (e.g., `landing/page.tsx`).
-  - `src/components/` — UI components (e.g., `token-page/*`, `shared/*`).
-  - `src/consts/` — Chain, contract, and token configuration.
+  - `src/app/` — Next.js routes (e.g., `collection/`, `create-property/`, `my-investments/`).
+  - `src/components/` — UI components (e.g., `PropertyCreationForm.tsx`, `InvestmentModal.tsx`).
+  - `src/services/` — Blockchain services (e.g., `propertyContract.ts`, `onechain.ts`).
+  - `src/consts/` — Configuration constants.
 
 ## Scripts
 
@@ -671,41 +578,43 @@ npm run start    # start production server
 npm run lint     # run Next.js lint
 ```
 
-Hardhat (typical usage):
+OneChain CLI (Move contract deployment):
 
 ```bash
-npx hardhat compile
-npx hardhat test
-# Deploy (example):
-npx hardhat run scripts/deploy.ts --network <network>
+one move build                    # compile Move contracts
+one move test                     # test Move contracts
+one client publish --gas-budget 100000000  # deploy to OneChain
+one client call --package <PKG_ID> --module property_nft --function create_property  # interact with contracts
 ```
 
 ## Environment
 
 Create `.env.local` at repo root:
 
+```env
+# OneChain Configuration
+NEXT_PUBLIC_ONECHAIN_RPC_URL=https://rpc-testnet.onelabs.cc:443
+NEXT_PUBLIC_ONECHAIN_NETWORK=testnet
+NEXT_PUBLIC_RWA_PACKAGE_ID=YOUR_PACKAGE_ID
 ```
-NEXT_PUBLIC_TW_CLIENT_ID="<your-thirdweb-client-id>"
-```
-
-You can obtain a client ID from the [thirdweb dashboard](https://thirdweb.com/dashboard/settings/api-keys).
 
 ## Workflow
 
 1) Install dependencies: `npm install`
 
-2) Configure environment: create `.env.local` with your Thirdweb client ID.
+2) Configure environment: create `.env.local` with OneChain configuration.
 
-3) (Optional) Develop/compile/deploy contracts with Hardhat.
+3) (Optional) Develop/compile/deploy Move contracts with OneChain CLI:
+   ```bash
+   one move build
+   one client publish --gas-budget 100000000
+   ```
 
-4) Update frontend configs:
-   - Chains: `src/consts/chains.ts`
-   - Marketplace contracts: `src/consts/marketplace_contract.ts`
-   - Supported tokens: `src/consts/supported_tokens.ts`
+4) Update package ID in `.env.local` with your deployed contract address.
 
 5) Run the app: `npm run dev` and open http://localhost:3000
 
-6) Connect wallet (OneWallet via navbar) and interact with marketplace pages.
+6) Connect wallet (OneChain Wallet via navbar) and interact with the marketplace.
 
 
 ## Troubleshooting
@@ -713,35 +622,36 @@ You can obtain a client ID from the [thirdweb dashboard](https://thirdweb.com/da
 ### Common Issues
 
 #### Wallet Connection Issues
-- **OneChain Network**: Ensure your wallet is configured for OneChain network (Chain ID: 1001 for testnet, 1000 for mainnet)
-- **Auto Network Switch**: The app will prompt you to switch to OneChain automatically
-- **Desktop**: Ensure you have MetaMask, Coinbase Wallet, or another supported wallet extension installed
-- **Mobile**: Use WalletConnect or the built-in browser of your mobile wallet
+- **OneChain Wallet**: Install OneChain Wallet extension from the official website
+- **Wallet Standard**: The app uses Wallet Standard interface for OneChain integration
 - **Connection Fails**: Try refreshing the page and reconnecting
-- **Wrong Network**: The app prioritizes OneChain but supports legacy testnets as fallback
+- **No Wallet Detected**: Ensure OneChain Wallet extension is installed and unlocked
+- **Wrong Network**: Make sure you're connected to OneChain Testnet
 
 #### OneChain-Specific Issues
-- **RPC Connection**: If OneChain RPC is slow, check your network configuration
-- **Contract Interactions**: Ensure you have sufficient ONE tokens for gas fees
-- **Fractionalization Fails**: Verify you own the NFT and have approved the Fractionalizer contract
-- **Asset Not Loading**: Check if the asset exists on the correct OneChain network (testnet vs mainnet)
+- **RPC Connection**: If OneChain RPC is slow, check your network configuration at `https://rpc-testnet.onelabs.cc:443`
+- **Contract Interactions**: Ensure you have sufficient **OCT tokens** for gas fees (not ONE)
+- **Transaction Fails**: Check transaction on OneScan: `https://onescan.cc/testnet/home`
+- **Property Not Loading**: Verify the property exists on OneChain testnet
+- **Investment Fails**: Ensure you have enough OCT for both the investment amount and gas fees
 
 #### Build/Runtime Errors
 - **Module not found errors**: Run `npm install` to ensure all dependencies are installed
-- **Environment variable errors**: Ensure `.env.local` exists with valid `NEXT_PUBLIC_THIRDWEB_CLIENT_ID`
+- **Environment variable errors**: Ensure `.env.local` exists with valid OneChain configuration
 - **Next.js fails to start**: Clear `.next/` folder and retry: `rm -rf .next && npm run dev` (Windows: delete `.next` folder manually)
-- **Scrypt compilation errors**: The project includes webpack configuration to handle this automatically
+- **TypeScript errors**: Run `npm run build` to check for type errors before deploying
 
 #### Performance Issues
-- **Slow loading**: The app fetches real NFT metadata which may take time
-- **Network timeouts**: Switch to a different OneChain RPC endpoint if needed
-- **Low gas fees**: OneChain offers significantly lower fees compared to Ethereum mainnet
-- **Development**: Use OneChain testnet for development and testing
+- **Slow loading**: The app fetches real blockchain data which may take time
+- **Network timeouts**: OneChain testnet may have occasional delays
+- **Low gas fees**: OneChain offers significantly lower fees compared to Ethereum mainnet (~0.01-0.05 OCT per transaction)
+- **Development**: Always use OneChain testnet for development and testing
 
 ### Getting Help
-- Check the [thirdweb documentation](https://portal.thirdweb.com/)
-- Join the [thirdweb Discord](https://discord.gg/thirdweb) for community support
-- Review contract addresses in `src/consts/` if using custom deployments
+- Check the [OneChain documentation](https://docs.onechain.network)
+- Visit [OneScan Explorer](https://onescan.cc/testnet/home) to verify transactions
+- Review contract addresses in `.env.local` if using custom deployments
+- Open an issue on GitHub for project-specific problems
 
 ## Demo
 
