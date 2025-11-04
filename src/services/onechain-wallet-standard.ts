@@ -355,18 +355,54 @@ class OneChainWalletStandardService {
     const txOptions = options || { showEffects: true, showObjectChanges: true };
 
     try {
-      // Method 1: Try direct wallet execution (recommended by OneChain docs)
-      // Pass the Transaction object directly - wallet will handle building
-      if ((this.wallet as any).signAndExecuteTransaction) {
+      // Build transaction bytes - OneWallet needs this to display properly
+      console.log('Building transaction bytes for OneWallet...');
+      const txBytes = await transaction.build({ 
+        client: this.suiClient as any
+      });
+      console.log('Transaction built, bytes length:', txBytes.length);
+
+      // Method 1: Try Wallet Standard feature with transaction bytes
+      if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
         try {
-          console.log('Attempting wallet signAndExecuteTransaction...');
-          console.log('Transaction data:', {
-            sender: (transaction as any).getData?.()?.sender,
-            gasBudget: (transaction as any).getData?.()?.gasData?.budget
+          console.log('Attempting Wallet Standard signAndExecuteTransaction with bytes...');
+          
+          const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
+            transaction: {
+              kind: 'bytes',
+              data: txBytes
+            } as any,
+            account: this.connectedAccount,
+            chain: 'sui:testnet',
+            options: txOptions,
           });
           
+          console.log('✅ Transaction executed via Wallet Standard!', result);
+          return result;
+        } catch (standardError: any) {
+          console.warn('Wallet Standard with bytes failed:', standardError);
+          
+          // Check if user rejected
+          if (standardError.message?.includes('rejected') || 
+              standardError.message?.includes('denied') || 
+              standardError.code === 4001) {
+            throw new Error('Transaction was rejected by user');
+          }
+          
+          console.log('Trying alternative method...');
+        }
+      }
+
+      // Method 2: Try direct wallet execution with bytes
+      if ((this.wallet as any).signAndExecuteTransaction) {
+        try {
+          console.log('Attempting wallet signAndExecuteTransaction with bytes...');
+          
           const result = await (this.wallet as any).signAndExecuteTransaction({
-            transaction: transaction,
+            transaction: {
+              kind: 'bytes',
+              data: txBytes
+            },
             account: this.connectedAccount,
             chain: 'sui:testnet',
             options: txOptions,
@@ -375,7 +411,7 @@ class OneChainWalletStandardService {
           console.log('✅ Transaction executed successfully!', result);
           return result;
         } catch (walletError: any) {
-          console.warn('Wallet signAndExecuteTransaction failed:', walletError);
+          console.warn('Wallet signAndExecuteTransaction with bytes failed:', walletError);
           
           // Check if user rejected
           if (walletError.message?.includes('rejected') || 
@@ -384,31 +420,31 @@ class OneChainWalletStandardService {
             throw new Error('Transaction was rejected by user');
           }
           
-          // Try next method
-          console.log('Trying alternative method...');
+          console.log('Trying legacy method...');
         }
       }
 
-      // Method 2: Try Wallet Standard feature
-      if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
+      // Method 3: Try with Transaction object directly (fallback)
+      if ((this.wallet as any).signAndExecuteTransaction) {
         try {
-          console.log('Attempting Wallet Standard signAndExecuteTransaction...');
+          console.log('Attempting wallet signAndExecuteTransaction with Transaction object...');
           
-          const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
+          const result = await (this.wallet as any).signAndExecuteTransaction({
             transaction: transaction,
             account: this.connectedAccount,
+            chain: 'sui:testnet',
             options: txOptions,
           });
           
-          console.log('✅ Transaction executed via Wallet Standard!', result);
+          console.log('✅ Transaction executed with Transaction object!', result);
           return result;
-        } catch (standardError: any) {
-          console.warn('Wallet Standard failed:', standardError);
+        } catch (walletError: any) {
+          console.warn('Wallet signAndExecuteTransaction with object failed:', walletError);
           
           // Check if user rejected
-          if (standardError.message?.includes('rejected') || 
-              standardError.message?.includes('denied') || 
-              standardError.code === 4001) {
+          if (walletError.message?.includes('rejected') || 
+              walletError.message?.includes('denied') || 
+              walletError.code === 4001) {
             throw new Error('Transaction was rejected by user');
           }
         }
