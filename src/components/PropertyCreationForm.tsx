@@ -188,9 +188,13 @@ const PropertyCreationForm: React.FC = () => {
     try {
       // Get connected wallet account
       const account = await oneChainService.getConnectedAccount();
-      if (!account) {
+      console.log('Connected account:', account);
+      
+      if (!account || !account.address) {
         throw new Error('Please connect your wallet first');
       }
+
+      console.log('Using sender address:', account.address);
 
       // Check OCT balance before proceeding
       const client = new SuiClient({
@@ -203,6 +207,7 @@ const PropertyCreationForm: React.FC = () => {
       });
 
       const balanceInOCT = parseInt(balance.totalBalance) / 1_000_000_000;
+      console.log('OCT Balance:', balanceInOCT);
       
       if (balanceInOCT < 0.1) {
         toast({
@@ -219,7 +224,12 @@ const PropertyCreationForm: React.FC = () => {
       const tx = new Transaction();
       
       // Set sender (required for wallet to display transaction)
+      console.log('Setting transaction sender to:', account.address);
       tx.setSender(account.address);
+      
+      // Verify sender was set
+      const txData = (tx as any).getData?.();
+      console.log('Transaction sender after setSender:', txData?.sender);
       
       // Convert OCT to MIST (1 OCT = 1,000,000,000 MIST)
       const pricePerShareInMist = Math.floor(formData.pricePerShare * 1_000_000_000);
