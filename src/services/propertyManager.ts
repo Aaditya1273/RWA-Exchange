@@ -1,5 +1,5 @@
-import { SuiClient } from '@mysten/sui.js/client';
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { SuiClient } from '@mysten/sui/client';
+import { Transaction } from '@mysten/sui/transactions';
 import { oneChainWalletStandardService } from './onechain-wallet-standard';
 
 const RPC_URL = process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443';
@@ -64,21 +64,21 @@ export class PropertyManager {
         throw new Error('Wallet not connected');
       }
 
-      const tx = new TransactionBlock();
+      const tx = new Transaction();
 
       // Call create_property function
       tx.moveCall({
         target: `${PACKAGE_ID}::property_nft::create_property`,
         arguments: [
-          tx.pure(Array.from(new TextEncoder().encode(propertyData.name))),
-          tx.pure(Array.from(new TextEncoder().encode(propertyData.description))),
-          tx.pure(Array.from(new TextEncoder().encode(propertyData.imageUrl))),
-          tx.pure(Array.from(new TextEncoder().encode(propertyData.location))),
-          tx.pure(Array.from(new TextEncoder().encode(propertyData.propertyType))),
+          tx.pure.string(propertyData.name),
+          tx.pure.string(propertyData.description),
+          tx.pure.string(propertyData.imageUrl),
+          tx.pure.string(propertyData.location),
+          tx.pure.string(propertyData.propertyType),
           tx.pure.u64(propertyData.totalValue),
           tx.pure.u64(propertyData.totalShares),
           tx.pure.u64(propertyData.pricePerShare),
-          tx.pure(Array.from(new TextEncoder().encode(propertyData.rentalYield))),
+          tx.pure.string(propertyData.rentalYield),
         ],
       });
 
@@ -87,7 +87,6 @@ export class PropertyManager {
       const result = await oneChainWalletStandardService.signAndExecuteTransaction(tx, {
         showEffects: true,
         showObjectChanges: true,
-        showEvents: true,
       });
 
       // Extract property ID from created objects
@@ -127,7 +126,7 @@ export class PropertyManager {
         throw new Error('Wallet not connected');
       }
 
-      const tx = new TransactionBlock();
+      const tx = new Transaction();
 
       // Convert OCT to MIST
       const paymentInMist = paymentAmountInOCT * 1_000_000_000;
@@ -150,7 +149,6 @@ export class PropertyManager {
       const result = await oneChainWalletStandardService.signAndExecuteTransaction(tx, {
         showEffects: true,
         showObjectChanges: true,
-        showEvents: true,
       });
 
       // Extract investment ID from created objects
@@ -327,7 +325,7 @@ export class PropertyManager {
         throw new Error('Wallet not connected');
       }
 
-      const tx = new TransactionBlock();
+      const tx = new Transaction();
 
       tx.moveCall({
         target: `${PACKAGE_ID}::property_nft::transfer_investment`,
@@ -372,7 +370,7 @@ export class PropertyManager {
         throw new Error('Wallet not connected');
       }
 
-      const tx = new TransactionBlock();
+      const tx = new Transaction();
 
       tx.moveCall({
         target: `${PACKAGE_ID}::property_nft::claim_dividends`,
