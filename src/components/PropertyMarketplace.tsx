@@ -290,20 +290,39 @@ const PropertyMarketplace: React.FC = () => {
         url: process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443'
       });
 
-      // Query all PropertyNFT objects
-      const objects = await client.getOwnedObjects({
-        owner: account?.address || '',
-        filter: {
-          StructType: `${process.env.NEXT_PUBLIC_RWA_PACKAGE_ID}::property_nft::PropertyNFT`
+      // Query ALL PropertyNFT objects from all owners (for marketplace)
+      const objects = await client.queryEvents({
+        query: {
+          MoveEventType: `${process.env.NEXT_PUBLIC_RWA_PACKAGE_ID}::property_nft::PropertyCreated`
         },
-        options: {
-          showContent: true,
-          showType: true,
+        limit: 50,
+      });
+
+      // Fetch full object details for each property
+      const propertyPromises = objects.data.map(async (event: any) => {
+        const propertyId = event.parsedJson?.property_id;
+        if (!propertyId) return null;
+
+        try {
+          const obj = await client.getObject({
+            id: propertyId,
+            options: {
+              showContent: true,
+              showType: true,
+            }
+          });
+          return obj;
+        } catch (error) {
+          console.error(`Error fetching property ${propertyId}:`, error);
+          return null;
         }
       });
 
+      const objectsData = await Promise.all(propertyPromises);
+      const validObjects = objectsData.filter(obj => obj !== null);
+
       // Transform the data
-      const propertyList: PropertyNFT[] = objects.data.map((obj: any) => {
+      const propertyList: PropertyNFT[] = validObjects.map((obj: any) => {
         const fields = obj.data?.content?.fields;
         return {
           id: obj.data?.objectId,
@@ -315,7 +334,7 @@ const PropertyMarketplace: React.FC = () => {
           totalValue: parseInt(fields?.total_value || '0'),
           totalShares: parseInt(fields?.total_shares || '0'),
           availableShares: parseInt(fields?.available_shares || '0'),
-          pricePerShare: parseInt(fields?.price_per_share || '0'),
+          pricePerShare: parseInt(fields?.price_per_share || '0') / 1_000_000_000, // Convert from MIST to OCT
           rentalYield: fields?.rental_yield || '',
           owner: fields?.owner || '',
           isActive: fields?.is_active || false,
