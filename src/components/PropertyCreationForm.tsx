@@ -198,6 +198,9 @@ const PropertyCreationForm: React.FC = () => {
       // Set sender (required for wallet to display transaction)
       tx.setSender(account.address);
       
+      // Convert OCT to MIST (1 OCT = 1,000,000,000 MIST)
+      const pricePerShareInMist = Math.floor(formData.pricePerShare * 1_000_000_000);
+      
       // Call the create_property function from your deployed contract
       tx.moveCall({
         target: `${process.env.NEXT_PUBLIC_RWA_PACKAGE_ID}::property_nft::create_property`,
@@ -209,7 +212,7 @@ const PropertyCreationForm: React.FC = () => {
           tx.pure.string(formData.propertyType),
           tx.pure.u64(formData.totalValue),
           tx.pure.u64(formData.totalShares),
-          tx.pure.u64(formData.pricePerShare),
+          tx.pure.u64(pricePerShareInMist),
           tx.pure.string(formData.rentalYield),
         ],
       });

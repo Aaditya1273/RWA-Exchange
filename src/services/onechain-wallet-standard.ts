@@ -350,15 +350,20 @@ class OneChainWalletStandardService {
     }
 
     console.log('Executing transaction with OneChain wallet...');
+    console.log('Transaction object:', transaction);
 
     const txOptions = options || { showEffects: true, showObjectChanges: true };
 
     try {
       // Method 1: Try direct wallet execution (recommended by OneChain docs)
-      // Let the wallet handle transaction building, gas selection, and sender setting
+      // Pass the Transaction object directly - wallet will handle building
       if ((this.wallet as any).signAndExecuteTransaction) {
         try {
           console.log('Attempting wallet signAndExecuteTransaction...');
+          console.log('Transaction data:', {
+            sender: (transaction as any).getData?.()?.sender,
+            gasBudget: (transaction as any).getData?.()?.gasData?.budget
+          });
           
           const result = await (this.wallet as any).signAndExecuteTransaction({
             transaction: transaction,
