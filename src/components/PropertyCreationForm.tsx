@@ -27,7 +27,7 @@ import {
 import { FiUpload, FiImage, FiDollarSign, FiHome, FiMapPin } from 'react-icons/fi';
 import { useOneChainWallet } from '@/hooks/useOneChainWallet';
 import { oneChainService } from '@/services/onechain';
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { Transaction } from '@mysten/sui/transactions';
 import { SuiClient } from '@mysten/sui.js/client';
 
 interface PropertyFormData {
@@ -187,26 +187,26 @@ const PropertyCreationForm: React.FC = () => {
 
     try {
       // Create transaction using OneChain service
-      const txb = new TransactionBlock();
+      const tx = new Transaction();
       
       // Call the create_property function from your deployed contract
-      txb.moveCall({
+      tx.moveCall({
         target: `${process.env.NEXT_PUBLIC_RWA_PACKAGE_ID}::property_nft::create_property`,
         arguments: [
-          txb.pure.string(formData.name),
-          txb.pure.string(formData.description),
-          txb.pure.string(formData.imageUrl),
-          txb.pure.string(formData.location),
-          txb.pure.string(formData.propertyType),
-          txb.pure.u64(formData.totalValue),
-          txb.pure.u64(formData.totalShares),
-          txb.pure.u64(formData.pricePerShare),
-          txb.pure.string(formData.rentalYield),
+          tx.pure.string(formData.name),
+          tx.pure.string(formData.description),
+          tx.pure.string(formData.imageUrl),
+          tx.pure.string(formData.location),
+          tx.pure.string(formData.propertyType),
+          tx.pure.u64(formData.totalValue),
+          tx.pure.u64(formData.totalShares),
+          tx.pure.u64(formData.pricePerShare),
+          tx.pure.string(formData.rentalYield),
         ],
       });
 
       // Execute transaction using OneChain service
-      const result = await oneChainService.signAndExecuteTransaction(txb);
+      const result = await oneChainService.signAndExecuteTransaction(tx);
 
       if (result && result.digest) {
         toast({

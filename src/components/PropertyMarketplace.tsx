@@ -35,8 +35,8 @@ import {
 import { FiMapPin, FiDollarSign, FiTrendingUp, FiUsers, FiShoppingCart } from 'react-icons/fi';
 import { useOneChainWallet } from '@/hooks/useOneChainWallet';
 import { oneChainService } from '@/services/onechain';
-import { TransactionBlock } from '@mysten/sui.js/transactions';
-import { SuiClient } from '@mysten/sui.js/client';
+import { Transaction } from '@mysten/sui/transactions';
+import { SuiClient } from '@mysten/sui/client';
 
 interface PropertyNFT {
   id: string;
@@ -357,7 +357,7 @@ const PropertyMarketplace: React.FC = () => {
         url: process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443'
       });
 
-      const txb = new TransactionBlock();
+      const tx = new Transaction();
       
       // Get OCT coins for payment
       const coins = await client.getCoins({
@@ -375,22 +375,22 @@ const PropertyMarketplace: React.FC = () => {
       const totalCost = shares * property.pricePerShare;
       
       // Create payment coin
-      const [paymentCoin] = txb.splitCoins(txb.object(coins.data[0].coinObjectId), [
-        txb.pure(totalCost)
+      const [paymentCoin] = tx.splitCoins(tx.object(coins.data[0].coinObjectId), [
+        tx.pure.u64(totalCost)
       ]);
 
       // Call invest function
-      txb.moveCall({
+      tx.moveCall({
         target: `${process.env.NEXT_PUBLIC_RWA_PACKAGE_ID}::property_nft::invest`,
         arguments: [
-          txb.object(propertyId),
+          tx.object(propertyId),
           paymentCoin,
-          txb.pure(shares),
+          tx.pure.u64(shares),
         ],
       });
 
       // Execute transaction using OneChain service
-      const result = await oneChainService.signAndExecuteTransaction(txb);
+      const result = await oneChainService.signAndExecuteTransaction(tx);
 
       if (result && result.digest) {
         toast({
