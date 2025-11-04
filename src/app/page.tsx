@@ -350,8 +350,8 @@ export default function Home() {
             >
               <Box position="relative" overflow="hidden">
                 <Image 
-                  src={item.thumbnailUrl} 
-                  alt={item.title}
+                  src={item.thumbnail || item.imageUrl || item.thumbnailUrl} 
+                  alt={item.title || item.name}
                   w="full"
                   h="240px"
                   objectFit="cover"

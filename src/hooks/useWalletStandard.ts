@@ -41,28 +41,59 @@ export const useWalletStandard = (): UseWalletStandardReturn => {
   // Load saved wallet state on mount and verify connection
   useEffect(() => {
     const initializeWallet = async () => {
-      const savedAccount = localStorage.getItem('onechain_wallet_standard');
+      // First, check if wallet service already has a connected account
+      const serviceAccount = oneChainWalletStandardService.getConnectedAccount();
+      if (serviceAccount) {
+        console.log('useWalletStandard: Using already connected account from service:', serviceAccount.address);
+        setAccount(serviceAccount);
+        refreshBalanceForAccount(serviceAccount);
+        return;
+      }
+
+      // Check both storage keys for compatibility
+      let savedAccount = localStorage.getItem('onechain_wallet_standard');
+      if (!savedAccount) {
+        // Fallback to old key
+        savedAccount = localStorage.getItem('onechain_wallet');
+      }
+      
       if (savedAccount) {
         try {
           const accountData = JSON.parse(savedAccount);
+          console.log('useWalletStandard: Found saved account:', accountData.address);
           
-          // Verify the connection is still active
-          const isStillConnected = await oneChainWalletStandardService.refreshConnectionState();
-          
-          if (isStillConnected) {
+          // Try to refresh connection state
+          try {
+            const isStillConnected = await oneChainWalletStandardService.refreshConnectionState();
+            
+            if (isStillConnected) {
+              const connectedAccount = oneChainWalletStandardService.getConnectedAccount();
+              if (connectedAccount) {
+                console.log('useWalletStandard: Wallet is connected:', connectedAccount.address);
+                setAccount(connectedAccount);
+                refreshBalanceForAccount(connectedAccount);
+              } else {
+                console.warn('useWalletStandard: Using saved account data');
+                setAccount(accountData);
+                refreshBalanceForAccount(accountData);
+              }
+            } else {
+              console.warn('useWalletStandard: Connection lost, but keeping saved data');
+              // Keep the saved data for UI, but mark as potentially disconnected
+              setAccount(accountData);
+            }
+          } catch (refreshError) {
+            console.warn('useWalletStandard: Refresh failed, using saved data:', refreshError);
+            // If refresh fails, still use saved data
             setAccount(accountData);
-            // Refresh balance for saved account
             refreshBalanceForAccount(accountData);
-          } else {
-            // Connection lost, clear saved data
-            localStorage.removeItem('onechain_wallet_standard');
-            setAccount(null);
           }
         } catch (err) {
           console.error('Error loading saved wallet:', err);
-          localStorage.removeItem('onechain_wallet_standard');
           setAccount(null);
         }
+      } else {
+        console.log('useWalletStandard: No saved wallet found');
       }
     };
 

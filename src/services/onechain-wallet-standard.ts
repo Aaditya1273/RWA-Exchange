@@ -170,30 +170,40 @@ class OneChainWalletStandardService {
       const wallet = this.getWalletInstance();
       
       if (!wallet) {
-        throw new Error('Wallet extension not found. Please install Sui Wallet or OneChain wallet.');
+        throw new Error('OneChain wallet extension not found. Please install OneChain wallet from Chrome Web Store.');
       }
 
       this.wallet = wallet;
-      console.log('Connecting to wallet:', wallet.name || 'Unknown wallet');
-      console.log('Wallet features:', wallet.features ? Object.keys(wallet.features) : 'No features');
+      console.log('🔌 Connecting to wallet:', wallet.name || 'Unknown wallet');
+      console.log('📋 Wallet features:', wallet.features ? Object.keys(wallet.features) : 'No features');
 
-      // Try Wallet Standard connect first
+      // Try Wallet Standard connect first with timeout
       if (wallet.features && wallet.features['standard:connect']) {
         try {
-          const connectResult = await wallet.features['standard:connect'].connect();
+          console.log('🔄 Attempting Wallet Standard connection...');
+          
+          // Add timeout to prevent hanging
+          const connectPromise = wallet.features['standard:connect'].connect();
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Connection timeout')), 30000)
+          );
+          
+          const connectResult = await Promise.race([connectPromise, timeoutPromise]) as any;
           
           if (connectResult.accounts && connectResult.accounts.length > 0) {
             const account = connectResult.accounts[0];
             this.connectedAccount = account;
-            console.log('Connected via Wallet Standard:', account.address);
+            console.log('✅ Connected via Wallet Standard:', account.address);
             return account;
           }
-        } catch (standardError) {
-          console.warn('Wallet Standard connect failed, trying fallback:', standardError);
+        } catch (standardError: any) {
+          console.warn('⚠️ Wallet Standard connect failed:', standardError.message);
+          // Don't throw here, try fallback methods
         }
       }
 
       // Fallback to direct wallet connection methods
+      console.log('🔄 Trying fallback connection methods...');
       const connectionMethods = [
         { method: 'connect', args: [] },
         { method: 'requestPermissions', args: [{ permissions: ['viewAccount', 'suggestTransactions'] }] },
@@ -201,47 +211,73 @@ class OneChainWalletStandardService {
       ];
 
       let connected = false;
+      let lastError: any = null;
+      
       for (const { method, args } of connectionMethods) {
         if (wallet[method]) {
           try {
-            await wallet[method](...args);
+            console.log(`🔄 Trying ${method}...`);
+            
+            // Add timeout for each method
+            const methodPromise = wallet[method](...args);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error(`${method} timeout`)), 15000)
+            );
+            
+            await Promise.race([methodPromise, timeoutPromise]);
             connected = true;
-            console.log(`Connected using ${method}`);
+            console.log(`✅ Connected using ${method}`);
             break;
-          } catch (methodError) {
-            console.warn(`${method} failed:`, methodError);
+          } catch (methodError: any) {
+            console.warn(`❌ ${method} failed:`, methodError.message);
+            lastError = methodError;
           }
         }
       }
 
       if (!connected) {
-        throw new Error('Failed to connect using any available method');
+        throw new Error(`Failed to connect to OneChain wallet. Last error: ${lastError?.message || 'Unknown'}. Please make sure the wallet extension is unlocked and try again.`);
       }
 
       // Get accounts using various methods
+      console.log('🔍 Getting wallet accounts...');
       let accounts = [];
-      const accountMethods = ['getAccounts', 'accounts'];
       
-      for (const method of accountMethods) {
-        if (wallet[method]) {
+      // Try multiple ways to get accounts
+      const accountMethods = [
+        { name: 'getAccounts', isFunction: true },
+        { name: 'accounts', isFunction: false },
+        { name: 'getAccount', isFunction: true },
+      ];
+      
+      for (const { name, isFunction } of accountMethods) {
+        if (wallet[name]) {
           try {
-            if (typeof wallet[method] === 'function') {
-              accounts = await wallet[method]();
+            console.log(`🔄 Trying ${name}...`);
+            if (isFunction && typeof wallet[name] === 'function') {
+              accounts = await wallet[name]();
             } else {
-              accounts = wallet[method];
+              accounts = wallet[name];
             }
+            
+            // Handle single account response
+            if (accounts && !Array.isArray(accounts)) {
+              accounts = [accounts];
+            }
+            
             if (accounts && accounts.length > 0) {
-              console.log(`Got accounts using ${method}:`, accounts.length);
+              console.log(`✅ Got ${accounts.length} account(s) using ${name}`);
               break;
             }
-          } catch (accountError) {
-            console.warn(`${method} failed:`, accountError);
+          } catch (accountError: any) {
+            console.warn(`❌ ${name} failed:`, accountError.message);
           }
         }
       }
 
       if (!accounts || accounts.length === 0) {
-        throw new Error('No accounts found in wallet');
+        console.error('❌ No accounts found in wallet after connection');
+        throw new Error('No accounts found in wallet. Please make sure your wallet is unlocked and has at least one account.');
       }
 
       const account = {

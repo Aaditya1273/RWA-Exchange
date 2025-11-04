@@ -67,26 +67,36 @@ export default function CollectionPage() {
   const borderColor = useColorModeValue("gray.200", "gray.600");
 
   // Fetch properties from blockchain - REAL DATA ONLY
-  useEffect(() => {
-    const fetchProperties = async () => {
-      setIsLoading(true);
-      try {
-        const properties = await propertyContractService.getAllProperties();
-        setBlockchainProperties(properties);
-        setUseBlockchainData(true); // Always use blockchain data
-      } catch (error) {
-        console.error('Error fetching blockchain properties:', error);
-        setBlockchainProperties([]); // Show empty if error
-        setUseBlockchainData(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchProperties = async () => {
+    setIsLoading(true);
+    try {
+      console.log('🔄 Fetching properties from blockchain...');
+      const properties = await propertyContractService.getAllProperties();
+      console.log('✅ Fetched', properties.length, 'properties');
+      setBlockchainProperties(properties);
+      setUseBlockchainData(true); // Always use blockchain data
+    } catch (error) {
+      console.error('❌ Error fetching blockchain properties:', error);
+      setBlockchainProperties([]); // Show empty if error
+      setUseBlockchainData(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProperties();
   }, []);
 
   const handleInvestClick = (item: any) => {
+    console.log('🎯 Opening investment modal for property:', {
+      id: item.id,
+      name: item.name || item.title,
+      pricePerShare: item.pricePerShare,
+      availableShares: item.availableShares,
+      totalShares: item.totalShares,
+      fullItem: item
+    });
     setSelectedProperty(item);
     onOpen();
   };
@@ -236,14 +246,17 @@ export default function CollectionPage() {
           >
             <Box position="relative" overflow="hidden">
               <Image 
-                src={item.thumbnailUrl} 
-                alt={item.title}
+                src={item.thumbnail || item.imageUrl || item.thumbnailUrl} 
+                alt={item.title || item.name}
                 w="full"
                 h="240px"
                 objectFit="cover"
                 fallbackSrc="https://via.placeholder.com/300x240?text=Premium+Asset"
                 transition="transform 0.3s ease"
                 _hover={{ transform: "scale(1.05)" }}
+                onError={(e) => {
+                  console.log('❌ Image failed to load:', item.thumbnail || item.imageUrl);
+                }}
               />
               
               {/* Overlay Badges */}
@@ -310,26 +323,25 @@ export default function CollectionPage() {
                   <HStack justify="space-between" w="full">
                     <VStack align="start" spacing={1}>
                       <Text fontSize="xs" color="gray.500" fontWeight="500">
-                        Starting from
+                        Price per Share
                       </Text>
                       <Text fontSize="lg" fontWeight="700" color="purple.500" fontFamily="Outfit">
-                        $100
+                        {item.pricePerShare || 0} OCT
                       </Text>
                     </VStack>
                     <VStack align="end" spacing={1}>
                       <Text fontSize="xs" color="gray.500" fontWeight="500">
-                        Expected APY
+                        Available Shares
                       </Text>
                       <Text fontSize="lg" fontWeight="700" color="green.500" fontFamily="Outfit">
-                        8-12%
+                        {item.availableShares || 0}/{item.totalShares || 0}
                       </Text>
                     </VStack>
                   </HStack>
                   
                   <HStack spacing={2} w="full">
                     <Button
-                      as={Link}
-                      href={`/collection/${item.chain?.id?.toString() || 'default'}/${item.address}`}
+                      onClick={() => handleInvestClick(item)}
                       size="sm"
                       variant="outline"
                       colorScheme="purple"
@@ -339,7 +351,7 @@ export default function CollectionPage() {
                       leftIcon={<FaEye />}
                       _hover={{ transform: "translateY(-1px)" }}
                     >
-                      Details
+                      View Details
                     </Button>
                     <Button
                       onClick={() => handleInvestClick(item)}
@@ -407,16 +419,17 @@ export default function CollectionPage() {
         </VStack>
       </Box>
 
-      {/* Investment Modal */}
+      {/* Investment Modal - USE REAL BLOCKCHAIN DATA */}
       {selectedProperty && (
         <InvestmentModal
           isOpen={isOpen}
           onClose={onClose}
-          propertyId={selectedProperty.address}
-          propertyName={selectedProperty.title || "Property"}
-          pricePerShare={100}
-          availableShares={9900}
-          totalShares={10000}
+          propertyId={selectedProperty.id || selectedProperty.address}
+          propertyName={selectedProperty.name || selectedProperty.title || "Property"}
+          pricePerShare={selectedProperty.pricePerShare || 0}
+          availableShares={selectedProperty.availableShares || 0}
+          totalShares={selectedProperty.totalShares || 0}
+          onSuccess={fetchProperties}
         />
       )}
     </Container>

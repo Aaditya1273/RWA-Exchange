@@ -75,11 +75,13 @@ export class PropertyContractService {
 
       // Set gas budget for OneChain
       tx.setGasBudget(10_000_000); // 0.01 OCT
+      console.log('⛽ Gas budget set:', '0.01 OCT (10,000,000 MIST)');
 
       let result;
       
       // Use wallet service if provided, otherwise use direct client
       if (walletService && walletService.signAndExecuteTransaction) {
+        console.log('📝 Signing transaction with wallet...');
         result = await walletService.signAndExecuteTransaction(tx, {
           showEffects: true,
           showObjectChanges: true,
@@ -98,6 +100,16 @@ export class PropertyContractService {
         };
       }
 
+      // VERIFY REAL BLOCKCHAIN TRANSACTION
+      console.log('✅ REAL BLOCKCHAIN TRANSACTION CONFIRMED!');
+      console.log('📊 Transaction Details:', {
+        digest: result.digest,
+        effects: result.effects?.status,
+        gasUsed: result.effects?.gasUsed,
+        objectChanges: result.objectChanges?.length,
+        events: result.events?.length
+      });
+
       // Extract property ID from object changes
       const createdObjects = result.objectChanges?.filter(
         (change: any) => change.type === 'created'
@@ -106,6 +118,8 @@ export class PropertyContractService {
       const propertyObject = createdObjects?.find((obj: any) =>
         obj.objectType?.includes('PropertyNFT')
       );
+
+      console.log('🏠 Property NFT Created:', propertyObject?.objectId);
 
       return {
         success: true,
@@ -148,31 +162,52 @@ export class PropertyContractService {
     walletService?: any
   ): Promise<InvestResult> {
     try {
-      const tx = new Transaction();
+      console.log('💰 Creating investment transaction...', {
+        propertyId,
+        sharesToBuy,
+        paymentAmount,
+        hasWalletService: !!walletService
+      });
 
-      // Convert payment amount to MIST (OCT base unit)
-      const paymentInMist = paymentAmount * 1_000_000_000;
+      const tx = new Transaction();
+      console.log('✅ Transaction object created');
+
+      // IMPORTANT: pricePerShare is stored in OCT (not USD)
+      // paymentAmount = sharesToBuy * pricePerShare (in OCT)
+      // Convert OCT to MIST (1 OCT = 1,000,000,000 MIST)
+      const paymentInMist = Math.floor(paymentAmount * 1_000_000_000);
+      console.log('💰 Payment calculation:', {
+        shares: sharesToBuy,
+        pricePerShareOCT: paymentAmount / sharesToBuy,
+        totalOCT: paymentAmount,
+        totalMIST: paymentInMist
+      });
 
       // Split coins for payment
-      const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(paymentInMist)]);
+      const [coin] = tx.splitCoins(tx.gas, [paymentInMist]);
+      console.log('✅ Coin split successful');
 
-      // Call the invest function
+      // Call the invest function - use object() method for object references
+      // In @mysten/sui/transactions, object references use tx.object()
       tx.moveCall({
         target: `${PACKAGE_ID}::property_nft::invest`,
         arguments: [
-          tx.object(propertyId),
-          coin,
-          tx.pure.u64(sharesToBuy),
+          typeof tx.object === 'function' ? tx.object(propertyId) : tx.pure.address(propertyId),
+          coin,                         // Payment coin from splitCoins
+          tx.pure.u64(sharesToBuy),    // Number of shares as u64
         ],
       });
+      console.log('✅ moveCall added to transaction');
 
       // Set gas budget for OneChain
       tx.setGasBudget(50_000_000); // 0.05 OCT
+      console.log('⛽ Gas budget set:', '0.05 OCT (50,000,000 MIST)');
 
       let result;
       
       // Use wallet service if provided
       if (walletService && walletService.signAndExecuteTransaction) {
+        console.log('📝 Signing investment transaction with wallet...');
         result = await walletService.signAndExecuteTransaction(tx, {
           showEffects: true,
           showObjectChanges: true,
@@ -182,6 +217,25 @@ export class PropertyContractService {
         throw new Error('Wallet service required for transaction signing');
       }
 
+      // Check if this was a mock transaction
+      if (result.__MOCK__) {
+        console.warn('⚠️ MOCK INVESTMENT - Not a real blockchain transaction');
+        return {
+          success: false,
+          error: 'Investment was mocked. OneChain wallet integration needs fixing for real transactions.',
+        };
+      }
+
+      // VERIFY REAL BLOCKCHAIN TRANSACTION
+      console.log('✅ REAL BLOCKCHAIN INVESTMENT CONFIRMED!');
+      console.log('📊 Transaction Details:', {
+        digest: result.digest,
+        effects: result.effects?.status,
+        gasUsed: result.effects?.gasUsed,
+        objectChanges: result.objectChanges?.length,
+        events: result.events?.length
+      });
+
       // Extract investment ID from created objects
       const createdObjects = result.objectChanges?.filter(
         (change: any) => change.type === 'created'
@@ -190,6 +244,9 @@ export class PropertyContractService {
       const investmentObject = createdObjects?.find((obj: any) =>
         obj.objectType?.includes('Investment')
       );
+
+      console.log('💰 Investment NFT Created:', investmentObject?.objectId);
+      console.log('📈 Shares Purchased:', sharesToBuy);
 
       return {
         success: true,
@@ -251,31 +308,13 @@ export class PropertyContractService {
   }
 
   /**
-   * Get user's investments
-   */
-  async getUserInvestments(userAddress: string) {
-    try {
-      const objects = await this.client.getOwnedObjects({
-        owner: userAddress,
-        options: { showContent: true, showType: true },
-      });
-
-      const investments = objects.data.filter((obj: any) =>
-        obj.data?.type?.includes('Investment')
-      );
-
-      return investments;
-    } catch (error) {
-      console.error('Error fetching investments:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get all listed properties from blockchain
+   * Get all listed properties from blockchain with FULL details
    */
   async getAllProperties() {
     try {
+      console.log('🔍 Fetching properties from blockchain...');
+      console.log('Package ID:', PACKAGE_ID);
+      
       // Query all PropertyNFT objects
       const response = await this.client.queryEvents({
         query: {
@@ -284,21 +323,59 @@ export class PropertyContractService {
         limit: 50,
       });
 
-      const properties = response.data.map((event: any) => {
-        const parsedJson = event.parsedJson;
-        return {
-          id: parsedJson.property_id,
-          name: parsedJson.name,
-          totalValue: parsedJson.total_value,
-          totalShares: parsedJson.total_shares,
-          pricePerShare: parsedJson.price_per_share,
-          owner: parsedJson.owner,
-        };
-      });
+      console.log('📦 Found', response.data.length, 'property creation events');
 
-      return properties;
+      // Fetch full details for each property
+      const propertiesWithDetails = await Promise.all(
+        response.data.map(async (event: any) => {
+          const parsedJson = event.parsedJson;
+          const propertyId = parsedJson.property_id;
+          
+          console.log('📄 Fetching details for property:', propertyId);
+          
+          // Get full property details from blockchain
+          const details = await this.getPropertyDetails(propertyId);
+          
+          if (details) {
+            console.log('✅ Property details:', details.name, {
+              availableShares: details.availableShares,
+              totalShares: details.totalShares,
+              pricePerShare: details.pricePerShare,
+              imageUrl: details.imageUrl
+            });
+            
+            return {
+              id: details.id,
+              title: details.name,
+              name: details.name,
+              description: details.description,
+              thumbnail: details.imageUrl,
+              imageUrl: details.imageUrl,
+              location: details.location,
+              type: details.propertyType,
+              propertyType: details.propertyType,
+              totalValue: details.totalValue,
+              totalShares: details.totalShares,
+              availableShares: details.availableShares,
+              pricePerShare: details.pricePerShare,
+              rentalYield: details.rentalYield,
+              isActive: details.isActive,
+              owner: details.owner,
+            };
+          }
+          
+          console.warn('⚠️ Could not fetch details for property:', propertyId);
+          return null;
+        })
+      );
+
+      // Filter out null values
+      const validProperties = propertiesWithDetails.filter(p => p !== null);
+      console.log('✅ Total valid properties:', validProperties.length);
+      
+      return validProperties;
     } catch (error) {
-      console.error('Error fetching properties:', error);
+      console.error('❌ Error fetching properties:', error);
       return [];
     }
   }
@@ -336,6 +413,58 @@ export class PropertyContractService {
     } catch (error) {
       console.error('Error fetching property details:', error);
       return null;
+    }
+  }
+
+  /**
+   * Get user's investments from blockchain
+   */
+  async getUserInvestments(userAddress: string) {
+    try {
+      console.log('🔍 Fetching investments for user:', userAddress);
+      
+      // Query all Investment objects owned by the user
+      const objects = await this.client.getOwnedObjects({
+        owner: userAddress,
+        filter: {
+          StructType: `${PACKAGE_ID}::property_nft::Investment`,
+        },
+        options: {
+          showContent: true,
+          showType: true,
+        },
+      });
+
+      console.log('📦 Found', objects.data.length, 'investment objects');
+
+      // Fetch details for each investment
+      const investments = await Promise.all(
+        objects.data.map(async (obj: any) => {
+          const fields = obj.data?.content?.fields;
+          if (!fields) return null;
+
+          // Fetch property details
+          const propertyDetails = await this.getPropertyDetails(fields.property_id);
+
+          return {
+            id: obj.data.objectId,
+            propertyId: fields.property_id,
+            propertyName: propertyDetails?.name || 'Unknown Property',
+            shares: parseInt(fields.shares),
+            investmentAmount: parseInt(fields.investment_amount) / 1_000_000_000, // Convert from MIST to OCT
+            timestamp: fields.timestamp,
+            propertyDetails,
+          };
+        })
+      );
+
+      const validInvestments = investments.filter(inv => inv !== null);
+      console.log('✅ Total valid investments:', validInvestments.length);
+      
+      return validInvestments;
+    } catch (error) {
+      console.error('❌ Error fetching user investments:', error);
+      return [];
     }
   }
 

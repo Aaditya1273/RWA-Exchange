@@ -15,42 +15,53 @@ import {
   useColorModeValue,
   useDisclosure,
   Icon,
+  Spinner,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WalletGuard } from "@/components/WalletGuard";
 import { TransferSharesModal } from "@/components/TransferSharesModal";
 import { FaExchangeAlt, FaChartLine } from "react-icons/fa";
-
-// Mock data - in production, fetch from blockchain
-const mockInvestments = [
-  {
-    id: "0x123abc",
-    propertyName: "Luxury Downtown Condo",
-    shares: 100,
-    totalShares: 10000,
-    investmentAmount: 10000,
-    currentValue: 12000,
-    profitLoss: 2000,
-    profitPercent: 20,
-  },
-  {
-    id: "0x456def",
-    propertyName: "Beachfront Villa",
-    shares: 50,
-    totalShares: 5000,
-    investmentAmount: 5000,
-    currentValue: 5500,
-    profitLoss: 500,
-    profitPercent: 10,
-  },
-];
+import { useOneChainWallet } from "@/hooks/useOneChainWallet";
+import { propertyContractService } from "@/services/propertyContract";
 
 export default function MyInvestmentsPage() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedInvestment, setSelectedInvestment] = useState<any>(null);
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { account } = useOneChainWallet();
 
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.600");
+
+  // Fetch real investments from blockchain
+  useEffect(() => {
+    const fetchInvestments = async () => {
+      if (!account?.address) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        console.log('🔄 Fetching investments for:', account.address);
+        const userInvestments = await propertyContractService.getUserInvestments(account.address);
+        console.log('✅ Fetched investments:', userInvestments);
+        setInvestments(userInvestments);
+      } catch (error) {
+        console.error('❌ Error fetching investments:', error);
+        setInvestments([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInvestments();
+  }, [account?.address]);
+
+  // Calculate totals
+  const totalInvested = investments.reduce((sum, inv) => sum + inv.investmentAmount, 0);
+  const totalShares = investments.reduce((sum, inv) => sum + inv.shares, 0);
 
   const handleTransferClick = (investment: any) => {
     setSelectedInvestment(investment);
@@ -84,7 +95,7 @@ export default function MyInvestmentsPage() {
                     Total Invested
                   </Text>
                   <Text fontSize="3xl" fontWeight="bold">
-                    $15,000
+                    {totalInvested.toFixed(3)} OCT
                   </Text>
                 </VStack>
               </CardBody>
@@ -94,10 +105,10 @@ export default function MyInvestmentsPage() {
               <CardBody>
                 <VStack align="start" spacing={2}>
                   <Text fontSize="sm" color="gray.600">
-                    Current Value
+                    Total Shares
                   </Text>
-                  <Text fontSize="3xl" fontWeight="bold" color="green.500">
-                    $17,500
+                  <Text fontSize="3xl" fontWeight="bold" color="purple.500">
+                    {totalShares} shares
                   </Text>
                 </VStack>
               </CardBody>
@@ -107,12 +118,11 @@ export default function MyInvestmentsPage() {
               <CardBody>
                 <VStack align="start" spacing={2}>
                   <Text fontSize="sm" color="gray.600">
-                    Total Profit
+                    Properties
                   </Text>
-                  <Text fontSize="3xl" fontWeight="bold" color="green.500">
-                    +$2,500
+                  <Text fontSize="3xl" fontWeight="bold" color="blue.500">
+                    {investments.length}
                   </Text>
-                  <Badge colorScheme="green">+16.7%</Badge>
                 </VStack>
               </CardBody>
             </Card>
@@ -123,8 +133,21 @@ export default function MyInvestmentsPage() {
             <Heading size="md" mb={4}>
               Your Properties
             </Heading>
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-              {mockInvestments.map((investment) => (
+            {isLoading ? (
+              <Box textAlign="center" py={10}>
+                <Spinner size="xl" color="purple.500" />
+                <Text mt={4} color="gray.600">Loading your investments...</Text>
+              </Box>
+            ) : investments.length === 0 ? (
+              <Box textAlign="center" py={10}>
+                <Text fontSize="lg" color="gray.600">No investments yet</Text>
+                <Text fontSize="sm" color="gray.500" mt={2}>
+                  Start investing in properties to see them here!
+                </Text>
+              </Box>
+            ) : (
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                {investments.map((investment: any) => (
                 <Card
                   key={investment.id}
                   bg={cardBg}
@@ -155,43 +178,13 @@ export default function MyInvestmentsPage() {
                         </Box>
                         <Box>
                           <Text fontSize="xs" color="gray.600">
-                            Ownership
-                          </Text>
-                          <Text fontWeight="bold">
-                            {((investment.shares / investment.totalShares) * 100).toFixed(2)}%
-                          </Text>
-                        </Box>
-                        <Box>
-                          <Text fontSize="xs" color="gray.600">
                             Invested
                           </Text>
                           <Text fontWeight="bold">
-                            ${investment.investmentAmount.toLocaleString()}
-                          </Text>
-                        </Box>
-                        <Box>
-                          <Text fontSize="xs" color="gray.600">
-                            Current Value
-                          </Text>
-                          <Text fontWeight="bold" color="green.500">
-                            ${investment.currentValue.toLocaleString()}
+                            {investment.investmentAmount.toFixed(3)} OCT
                           </Text>
                         </Box>
                       </SimpleGrid>
-
-                      <Box p={3} bg="green.50" borderRadius="md">
-                        <HStack justify="space-between">
-                          <HStack>
-                            <Icon as={FaChartLine} color="green.500" />
-                            <Text fontSize="sm" fontWeight="bold" color="green.700">
-                              Profit: ${investment.profitLoss.toLocaleString()}
-                            </Text>
-                          </HStack>
-                          <Badge colorScheme="green" fontSize="sm">
-                            +{investment.profitPercent}%
-                          </Badge>
-                        </HStack>
-                      </Box>
 
                       <Button
                         leftIcon={<FaExchangeAlt />}
@@ -206,6 +199,7 @@ export default function MyInvestmentsPage() {
                 </Card>
               ))}
             </SimpleGrid>
+            )}
           </Box>
         </VStack>
 

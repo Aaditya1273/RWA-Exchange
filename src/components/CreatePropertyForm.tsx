@@ -91,11 +91,60 @@ export function CreatePropertyForm() {
       setProgress(90);
 
       if (result.success) {
+        const txHash = result.transactionDigest;
+        const explorerUrl = `https://onescan.cc/testnet/home#/transaction/${txHash}`;
+        
         toast({
-          title: "Property Created Successfully!",
-          description: `Transaction: ${result.transactionDigest?.slice(0, 10)}...`,
+          title: "Property Created Successfully! 🎉",
+          description: (
+            <VStack align="start" spacing={2} w="full">
+              <Text>Your property NFT has been minted!</Text>
+              <Box 
+                p={2} 
+                bg="gray.100" 
+                borderRadius="md" 
+                w="full"
+                fontSize="xs"
+                fontFamily="mono"
+              >
+                <Text fontWeight="bold" mb={1}>Transaction Hash:</Text>
+                <Text noOfLines={1}>{txHash}</Text>
+              </Box>
+              <HStack spacing={2} w="full">
+                <Button
+                  size="sm"
+                  colorScheme="purple"
+                  variant="outline"
+                  flex={1}
+                  onClick={() => {
+                    navigator.clipboard.writeText(txHash || '');
+                    toast({
+                      title: "Copied!",
+                      description: "Transaction hash copied to clipboard",
+                      status: "success",
+                      duration: 2000,
+                    });
+                  }}
+                >
+                  📋 Copy Hash
+                </Button>
+                <Button
+                  as="a"
+                  href={explorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="sm"
+                  colorScheme="purple"
+                  flex={1}
+                >
+                  🔍 View on OneScan
+                </Button>
+              </HStack>
+            </VStack>
+          ),
           status: "success",
-          duration: 5000,
+          duration: 15000,
+          isClosable: true,
         });
 
         setProgress(100);
@@ -113,10 +162,10 @@ export function CreatePropertyForm() {
           rentalYield: "8.5%",
         });
 
-        // Redirect to marketplace after 2 seconds
+        // Redirect to marketplace after 3 seconds (longer to see toast)
         setTimeout(() => {
           router.push("/collection");
-        }, 2000);
+        }, 3000);
       } else {
         throw new Error(result.error || "Transaction failed");
       }
@@ -240,13 +289,17 @@ export function CreatePropertyForm() {
 
             <HStack spacing={4}>
               <FormControl isRequired>
-                <FormLabel>Price Per Share (USD)</FormLabel>
+                <FormLabel>Price Per Share (OCT)</FormLabel>
                 <NumberInput
                   value={formData.pricePerShare}
-                  onChange={(_, val) => setFormData({ ...formData, pricePerShare: val })}
-                  min={0.01}
-                  step={0.01}
-                  precision={2}
+                  onChange={(valueString, valueNumber) => {
+                    // Use the number value, or 0 if NaN
+                    setFormData({ ...formData, pricePerShare: isNaN(valueNumber) ? 0 : valueNumber });
+                  }}
+                  min={0.001}
+                  step={0.001}
+                  precision={3}
+                  defaultValue={0.001}
                 >
                   <NumberInputField />
                 </NumberInput>
