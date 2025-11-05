@@ -223,7 +223,7 @@ class OneChainWalletStandardService {
       const account = {
         address: accounts[0].address || accounts[0],
         publicKey: accounts[0].publicKey,
-        chains: accounts[0].chains || ['sui:testnet'],
+        chains: accounts[0].chains || ['onechain:testnet'],
       };
 
       this.connectedAccount = account;
@@ -307,6 +307,24 @@ class OneChainWalletStandardService {
         console.log('✅ Sender already set to:', txData.sender);
       }
       
+      // CRITICAL: Check if user has gas coins before building
+      console.log('💰 Checking for gas coins...');
+      try {
+        const gasCoins = await this.suiClient.getCoins({
+          owner: this.connectedAccount.address,
+          coinType: '0x2::oct::OCT',
+        });
+        console.log('💰 Found', gasCoins.data.length, 'OCT coins');
+        console.log('💰 Total balance:', gasCoins.data.reduce((sum: number, coin: any) => sum + parseInt(coin.balance), 0));
+        
+        if (gasCoins.data.length === 0) {
+          throw new Error('No OCT coins found in your wallet. Please get OCT from the faucet: https://faucet-testnet.onelabs.cc');
+        }
+      } catch (coinError) {
+        console.error('❌ Error fetching gas coins:', coinError);
+        throw new Error('Failed to fetch gas coins. Please check your wallet balance.');
+      }
+      
       // Build transaction to populate gas data
       console.log('🔨 Building transaction bytes...');
       const txBytes = await transaction.build({ 
@@ -327,7 +345,7 @@ class OneChainWalletStandardService {
           const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
             transaction: txBytes as any,
             account: this.connectedAccount,
-            chain: 'sui:testnet',
+            chain: 'onechain:testnet',
             options: txOptions,
           });
           
@@ -355,7 +373,7 @@ class OneChainWalletStandardService {
           const result = await (this.wallet as any).signAndExecuteTransaction({
             transaction: txBytes as any,
             account: this.connectedAccount,
-            chain: 'sui:testnet',
+            chain: 'onechain:testnet',
             options: txOptions,
           });
           
@@ -681,7 +699,7 @@ class OneChainWalletStandardService {
         this.connectedAccount = {
           address: currentAccount.address || currentAccount,
           publicKey: currentAccount.publicKey,
-          chains: currentAccount.chains || ['sui:testnet'],
+          chains: currentAccount.chains || ['onechain:testnet'],
         };
       }
 
