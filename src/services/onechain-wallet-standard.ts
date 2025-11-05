@@ -330,25 +330,16 @@ class OneChainWalletStandardService {
       })));
       console.log('✅ Gas payment set with', gasCoins.data.length, 'coins');
       
-      // Build transaction - gas is already set, so build won't try to fetch
-      console.log('🔨 Building transaction bytes...');
-      const txBytes = await transaction.build({ 
-        client: this.oneChainClient,
-      });
+      // OneWallet expects the Transaction object itself, not bytes
+      console.log('📦 Transaction ready with gas payment set');
       
-      console.log('✅ Transaction built, bytes length:', txBytes.length);
-      
-      // Convert bytes to base64 for wallet
-      const txBase64 = Buffer.from(txBytes).toString('base64');
-      console.log('✅ Transaction base64 length:', txBase64.length);
-      
-      // Pass transaction bytes in the format OneWallet expects
+      // Pass the Transaction object directly to the wallet
       if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
         try {
-          console.log('Attempting Wallet Standard with transaction bytes...');
+          console.log('Attempting Wallet Standard with Transaction object...');
           
           const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
-            transaction: txBytes as any,
+            transaction: transaction,
             account: this.connectedAccount,
             chain: 'onechain:testnet',
             options: txOptions,
@@ -373,10 +364,10 @@ class OneChainWalletStandardService {
       // Try direct wallet execution
       if ((this.wallet as any).signAndExecuteTransaction) {
         try {
-          console.log('Attempting direct wallet with transaction bytes...');
+          console.log('Attempting direct wallet with Transaction object...');
           
           const result = await (this.wallet as any).signAndExecuteTransaction({
-            transaction: txBytes as any,
+            transaction: transaction,
             account: this.connectedAccount,
             chain: 'onechain:testnet',
             options: txOptions,
