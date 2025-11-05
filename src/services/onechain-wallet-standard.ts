@@ -335,8 +335,19 @@ class OneChainWalletStandardService {
       (transaction as any).setGasOwner(this.connectedAccount.address);
       console.log('✅ Gas owner set');
       
+      // Set expiration epoch (optional but might be required by wallet)
+      console.log('⏰ Setting transaction expiration...');
+      try {
+        const currentEpoch = await this.oneChainClient.getLatestSuiSystemState();
+        const expirationEpoch = Number(currentEpoch.epoch) + 100; // Expire in 100 epochs
+        (transaction as any).setExpiration(expirationEpoch);
+        console.log('✅ Expiration set to epoch:', expirationEpoch);
+      } catch (expError) {
+        console.warn('⚠️ Could not set expiration, continuing without it:', expError);
+      }
+      
       // OneWallet expects the Transaction object itself, not bytes
-      console.log('📦 Transaction ready with gas payment and owner set');
+      console.log('📦 Transaction ready with gas payment, owner, and expiration set');
       
       // Pass the Transaction object directly to the wallet
       if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
@@ -382,6 +393,13 @@ class OneChainWalletStandardService {
           return result;
         } catch (walletError: any) {
           console.error('Direct wallet failed with error:', walletError);
+          console.error('Error details:', {
+            message: walletError.message,
+            code: walletError.code,
+            name: walletError.name,
+            stack: walletError.stack,
+            fullError: JSON.stringify(walletError, null, 2)
+          });
           
           // Check if user rejected
           if (walletError.message?.includes('rejected') || 
