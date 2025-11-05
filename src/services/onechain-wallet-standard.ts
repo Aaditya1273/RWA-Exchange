@@ -340,7 +340,7 @@ class OneChainWalletStandardService {
       try {
         const currentEpoch = await this.oneChainClient.getLatestSuiSystemState();
         const expirationEpoch = Number(currentEpoch.epoch) + 100; // Expire in 100 epochs
-        (transaction as any).setExpiration(expirationEpoch);
+        transaction.setExpiration({ Epoch: expirationEpoch });
         console.log('✅ Expiration set to epoch:', expirationEpoch);
       } catch (expError) {
         console.warn('⚠️ Could not set expiration, continuing without it:', expError);
