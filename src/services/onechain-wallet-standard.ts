@@ -49,13 +49,13 @@ export interface OneChainWalletStandard {
 }
 
 class OneChainWalletStandardService {
-  private suiClient: SuiClient;
+  private oneChainClient: SuiClient;  // SuiClient class is used because OneChain is built on Sui
   private wallet: OneChainWalletStandard | null = null;
   private connectedAccount: WalletStandardAccount | null = null;
 
   constructor() {
     const rpcUrl = process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443';
-    this.suiClient = new SuiClient({ url: rpcUrl });
+    this.oneChainClient = new SuiClient({ url: rpcUrl });
   }
 
 
@@ -307,28 +307,33 @@ class OneChainWalletStandardService {
         console.log('✅ Sender already set to:', txData.sender);
       }
       
-      // CRITICAL: Check if user has gas coins before building
-      console.log('💰 Checking for gas coins...');
-      try {
-        const gasCoins = await this.suiClient.getCoins({
-          owner: this.connectedAccount.address,
-          coinType: '0x2::oct::OCT',
-        });
-        console.log('💰 Found', gasCoins.data.length, 'OCT coins');
-        console.log('💰 Total balance:', gasCoins.data.reduce((sum: number, coin: any) => sum + parseInt(coin.balance), 0));
-        
-        if (gasCoins.data.length === 0) {
-          throw new Error('No OCT coins found in your wallet. Please get OCT from the faucet: https://faucet-testnet.onelabs.cc');
-        }
-      } catch (coinError) {
-        console.error('❌ Error fetching gas coins:', coinError);
-        throw new Error('Failed to fetch gas coins. Please check your wallet balance.');
+      // CRITICAL: Manually set gas payment before building
+      console.log('💰 Fetching gas coins...');
+      const gasCoins = await this.oneChainClient.getCoins({
+        owner: this.connectedAccount.address,
+        coinType: '0x2::oct::OCT',
+      });
+      
+      console.log('💰 Found', gasCoins.data.length, 'OCT coins');
+      console.log('💰 Total balance:', gasCoins.data.reduce((sum: number, coin: any) => sum + parseInt(coin.balance), 0));
+      
+      if (gasCoins.data.length === 0) {
+        throw new Error('No OCT coins found in your wallet. Please get OCT from the faucet: https://faucet-testnet.onelabs.cc');
       }
       
-      // Build transaction to populate gas data
+      // Manually set gas payment to avoid SDK auto-selection issues
+      console.log('⛽ Setting gas payment manually...');
+      transaction.setGasPayment(gasCoins.data.map((coin: any) => ({
+        objectId: coin.coinObjectId,
+        version: coin.version,
+        digest: coin.digest,
+      })));
+      console.log('✅ Gas payment set with', gasCoins.data.length, 'coins');
+      
+      // Build transaction - gas is already set, so build won't try to fetch
       console.log('🔨 Building transaction bytes...');
       const txBytes = await transaction.build({ 
-        client: this.suiClient,
+        client: this.oneChainClient,
       });
       
       console.log('✅ Transaction built, bytes length:', txBytes.length);
@@ -495,7 +500,7 @@ class OneChainWalletStandardService {
       // Build transaction with onlyTransactionKind flag
       // Type assertion needed due to SuiClient compatibility
       const kindBytes = await transaction.build({ 
-        client: this.suiClient as any, 
+        client: this.oneChainClient as any, 
         onlyTransactionKind: true 
       });
       
@@ -602,7 +607,7 @@ class OneChainWalletStandardService {
     }
 
     try {
-      const balance = await this.suiClient.getBalance({
+      const balance = await this.oneChainClient.getBalance({
         owner: this.connectedAccount.address,
         coinType,
       });
@@ -623,7 +628,7 @@ class OneChainWalletStandardService {
     }
 
     try {
-      const objects = await this.suiClient.getOwnedObjects({
+      const objects = await this.oneChainClient.getOwnedObjects({
         owner: this.connectedAccount.address,
         filter,
         options: {
