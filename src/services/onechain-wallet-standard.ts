@@ -339,21 +339,20 @@ class OneChainWalletStandardService {
       // The wallet will handle expiration automatically
       console.log('⏰ Skipping expiration (wallet will set automatically)');
       
-      // Build the transaction to populate gas data and calculate fees
-      console.log('🔨 Building transaction with client...');
-      const txBytes = await transaction.build({ client: this.oneChainClient });
-      console.log('✅ Transaction built, bytes length:', txBytes.length);
+      // CRITICAL: Build transaction to populate gas data, but pass Transaction object to wallet
+      // Building populates the internal gas data, then wallet can read it via toJSON()
+      console.log('🔨 Building transaction to populate gas data...');
+      await transaction.build({ client: this.oneChainClient });
+      console.log('✅ Transaction built internally, gas data populated');
       
-      // Pass the built transaction bytes to the wallet in the correct format
+      // Pass the Transaction object (NOT bytes) to the wallet
+      // The wallet needs toJSON() method which only Transaction object has
       if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
         try {
-          console.log('Attempting Wallet Standard with transaction bytes...');
+          console.log('Attempting Wallet Standard with Transaction object...');
           
           const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
-            transaction: {
-              kind: 'bytes',
-              data: txBytes,
-            } as any,
+            transaction: transaction,
             account: this.connectedAccount,
             chain: 'onechain:testnet',
             options: txOptions,
@@ -375,16 +374,13 @@ class OneChainWalletStandardService {
         }
       }
 
-      // Try direct wallet execution with built bytes
+      // Try direct wallet execution with Transaction object
       if ((this.wallet as any).signAndExecuteTransaction) {
         try {
-          console.log('Attempting direct wallet with transaction bytes...');
+          console.log('Attempting direct wallet with Transaction object...');
           
           const result = await (this.wallet as any).signAndExecuteTransaction({
-            transaction: {
-              kind: 'bytes',
-              data: txBytes,
-            },
+            transaction: transaction,
             account: this.connectedAccount,
             chain: 'onechain:testnet',
             options: txOptions,
