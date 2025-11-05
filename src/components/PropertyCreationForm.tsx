@@ -265,9 +265,25 @@ const PropertyCreationForm: React.FC = () => {
       // Set gas budget (required for wallet to display transaction)
       tx.setGasBudget(50_000_000); // 0.05 OCT
       
-      // CRITICAL: Set gas owner (required for OneWallet to enable Sign button)
-      tx.setGasOwner(account.address);
-      console.log('✅ Gas owner set to:', account.address);
+      // CRITICAL: Get gas coins and set gas payment explicitly
+      // The gas owner is automatically derived from the payment coins
+      console.log('🔍 Fetching gas coins for:', account.address);
+      const coins = await oneChainService.getCoins(account.address, '0x2::oct::OCT');
+      
+      if (!coins || coins.length === 0) {
+        throw new Error('No OCT coins found for gas payment');
+      }
+      
+      console.log('💰 Found', coins.length, 'gas coins');
+      
+      // Set gas payment - this automatically sets the gas owner
+      tx.setGasPayment(coins.map((coin: any) => ({
+        objectId: coin.coinObjectId,
+        version: coin.version,
+        digest: coin.digest
+      })));
+      
+      console.log('✅ Gas payment set with', coins.length, 'coins');
 
       // Execute transaction using OneChain service
       const result = await oneChainService.signAndExecuteTransaction(tx);

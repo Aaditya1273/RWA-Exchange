@@ -88,6 +88,28 @@ class OneChainService {
   }
 
   /**
+   * Get coins owned by an address
+   */
+  async getCoins(owner: string, coinType: string) {
+    try {
+      const coins = await this.suiClient.getCoins({
+        owner,
+        coinType,
+      });
+      
+      return coins.data.map(coin => ({
+        coinObjectId: coin.coinObjectId,
+        version: coin.version,
+        digest: coin.digest,
+        balance: coin.balance,
+      }));
+    } catch (error) {
+      console.error('Error fetching coins:', error);
+      return [];
+    }
+  }
+
+  /**
    * Legacy method for backward compatibility
    */
   async connectExtensionWallet(): Promise<WalletAccount | null> {
