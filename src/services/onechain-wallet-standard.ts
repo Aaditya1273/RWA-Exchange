@@ -364,15 +364,15 @@ class OneChainWalletStandardService {
           console.log('✅ Transaction executed via Wallet Standard!', result);
           return result;
         } catch (standardError: any) {
-          console.error('Wallet Standard failed with error:', standardError);
-          
           // Check if user rejected
           if (standardError.message?.includes('rejected') || 
               standardError.message?.includes('denied') || 
               standardError.code === 4001) {
+            console.log('ℹ️ User rejected the transaction');
             throw new Error('Transaction was rejected by user');
           }
           
+          console.error('Wallet Standard failed with error:', standardError);
           throw standardError;
         }
       }
@@ -392,6 +392,14 @@ class OneChainWalletStandardService {
           console.log('✅ Transaction executed successfully!', result);
           return result;
         } catch (walletError: any) {
+          // Check if user rejected
+          if (walletError.message?.includes('rejected') || 
+              walletError.message?.includes('denied') || 
+              walletError.code === 4001) {
+            console.log('ℹ️ User rejected the transaction');
+            throw new Error('Transaction was rejected by user');
+          }
+          
           console.error('Direct wallet failed with error:', walletError);
           console.error('Error details:', {
             message: walletError.message,
@@ -400,13 +408,6 @@ class OneChainWalletStandardService {
             stack: walletError.stack,
             fullError: JSON.stringify(walletError, null, 2)
           });
-          
-          // Check if user rejected
-          if (walletError.message?.includes('rejected') || 
-              walletError.message?.includes('denied') || 
-              walletError.code === 4001) {
-            throw new Error('Transaction was rejected by user');
-          }
           
           throw walletError;
         }

@@ -300,14 +300,29 @@ const PropertyCreationForm: React.FC = () => {
       } else {
         throw new Error('Transaction failed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating property:', error);
-      toast({
-        title: 'Creation failed',
-        description: 'Failed to create property NFT',
-        status: 'error',
-        duration: 5000,
-      });
+      
+      // Check if user rejected the transaction
+      if (error?.message?.includes('rejected') || 
+          error?.message?.includes('denied') ||
+          error?.code === 4001) {
+        console.log('ℹ️ User cancelled the transaction');
+        toast({
+          title: 'Transaction Cancelled',
+          description: 'You rejected the transaction',
+          status: 'info',
+          duration: 3000,
+        });
+      } else {
+        // Show actual error for other failures
+        toast({
+          title: 'Creation failed',
+          description: error?.message || 'Failed to create property NFT',
+          status: 'error',
+          duration: 5000,
+        });
+      }
     } finally {
       setIsCreating(false);
     }
