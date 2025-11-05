@@ -339,16 +339,21 @@ class OneChainWalletStandardService {
       // The wallet will handle expiration automatically
       console.log('⏰ Skipping expiration (wallet will set automatically)');
       
-      // OneWallet expects the Transaction object itself, not bytes
-      console.log('📦 Transaction ready with gas payment, owner, and expiration set');
+      // Build the transaction to populate gas data and calculate fees
+      console.log('🔨 Building transaction with client...');
+      const txBytes = await transaction.build({ client: this.oneChainClient });
+      console.log('✅ Transaction built, bytes length:', txBytes.length);
       
-      // Pass the Transaction object directly to the wallet
+      // Pass the built transaction bytes to the wallet in the correct format
       if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
         try {
-          console.log('Attempting Wallet Standard with Transaction object...');
+          console.log('Attempting Wallet Standard with transaction bytes...');
           
           const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
-            transaction: transaction,
+            transaction: {
+              kind: 'bytes',
+              data: txBytes,
+            } as any,
             account: this.connectedAccount,
             chain: 'onechain:testnet',
             options: txOptions,
@@ -370,13 +375,16 @@ class OneChainWalletStandardService {
         }
       }
 
-      // Try direct wallet execution
+      // Try direct wallet execution with built bytes
       if ((this.wallet as any).signAndExecuteTransaction) {
         try {
-          console.log('Attempting direct wallet with Transaction object...');
+          console.log('Attempting direct wallet with transaction bytes...');
           
           const result = await (this.wallet as any).signAndExecuteTransaction({
-            transaction: transaction,
+            transaction: {
+              kind: 'bytes',
+              data: txBytes,
+            },
             account: this.connectedAccount,
             chain: 'onechain:testnet',
             options: txOptions,
