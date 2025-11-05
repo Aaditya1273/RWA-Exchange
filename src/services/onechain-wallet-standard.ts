@@ -330,8 +330,13 @@ class OneChainWalletStandardService {
       })));
       console.log('✅ Gas payment set with', gasCoins.data.length, 'coins');
       
+      // CRITICAL: Set gas owner explicitly (must match sender)
+      console.log('👤 Setting gas owner to:', this.connectedAccount.address);
+      (transaction as any).setGasOwner(this.connectedAccount.address);
+      console.log('✅ Gas owner set');
+      
       // OneWallet expects the Transaction object itself, not bytes
-      console.log('📦 Transaction ready with gas payment set');
+      console.log('📦 Transaction ready with gas payment and owner set');
       
       // Pass the Transaction object directly to the wallet
       if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
