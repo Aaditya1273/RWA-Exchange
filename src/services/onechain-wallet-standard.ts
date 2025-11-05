@@ -335,16 +335,9 @@ class OneChainWalletStandardService {
       (transaction as any).setGasOwner(this.connectedAccount.address);
       console.log('✅ Gas owner set');
       
-      // Set expiration epoch (optional but might be required by wallet)
-      console.log('⏰ Setting transaction expiration...');
-      try {
-        const currentEpoch = await this.oneChainClient.getLatestSuiSystemState();
-        const expirationEpoch = Number(currentEpoch.epoch) + 100; // Expire in 100 epochs
-        transaction.setExpiration({ Epoch: expirationEpoch });
-        console.log('✅ Expiration set to epoch:', expirationEpoch);
-      } catch (expError) {
-        console.warn('⚠️ Could not set expiration, continuing without it:', expError);
-      }
+      // DON'T set expiration - it causes wallet display issues
+      // The wallet will handle expiration automatically
+      console.log('⏰ Skipping expiration (wallet will set automatically)');
       
       // OneWallet expects the Transaction object itself, not bytes
       console.log('📦 Transaction ready with gas payment, owner, and expiration set');
