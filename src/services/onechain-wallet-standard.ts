@@ -296,28 +296,36 @@ class OneChainWalletStandardService {
     const txOptions = options || { showEffects: true, showObjectChanges: true };
 
     try {
-      // Verify sender is set before proceeding
+      // CRITICAL: Ensure sender is set
+      console.log('🔍 Checking transaction sender...');
       const txData = (transaction as any).getData?.();
-      console.log('Transaction data before execution:', {
-        sender: txData?.sender,
-        gasData: txData?.gasData
-      });
-
+      
       if (!txData?.sender) {
-        console.error('❌ Transaction sender is not set!');
-        console.log('Setting sender from connected account...');
+        console.log('⚠️ Sender not set, setting to:', this.connectedAccount.address);
         transaction.setSender(this.connectedAccount.address);
+      } else {
+        console.log('✅ Sender already set to:', txData.sender);
       }
-
-      // OneWallet requires transaction to be passed with proper serialization
-      // Try Wallet Standard feature
+      
+      // Build transaction to populate gas data
+      console.log('🔨 Building transaction bytes...');
+      const txBytes = await transaction.build({ 
+        client: this.suiClient,
+      });
+      
+      console.log('✅ Transaction built, bytes length:', txBytes.length);
+      
+      // Convert bytes to base64 for wallet
+      const txBase64 = Buffer.from(txBytes).toString('base64');
+      console.log('✅ Transaction base64 length:', txBase64.length);
+      
+      // Pass transaction bytes in the format OneWallet expects
       if (this.wallet.features?.['sui:signAndExecuteTransaction']) {
         try {
-          console.log('Attempting Wallet Standard signAndExecuteTransaction...');
-          console.log('Transaction has sender:', txData?.sender);
+          console.log('Attempting Wallet Standard with transaction bytes...');
           
           const result = await this.wallet.features['sui:signAndExecuteTransaction'].signAndExecuteTransaction({
-            transaction: transaction,
+            transaction: txBytes as any,
             account: this.connectedAccount,
             chain: 'sui:testnet',
             options: txOptions,
@@ -335,22 +343,17 @@ class OneChainWalletStandardService {
             throw new Error('Transaction was rejected by user');
           }
           
-          // If it's a gas error, throw it immediately
-          if (standardError.message?.includes('gas')) {
-            throw standardError;
-          }
-          
-          console.log('Trying direct wallet method...');
+          throw standardError;
         }
       }
 
       // Try direct wallet execution
       if ((this.wallet as any).signAndExecuteTransaction) {
         try {
-          console.log('Attempting direct wallet signAndExecuteTransaction...');
+          console.log('Attempting direct wallet with transaction bytes...');
           
           const result = await (this.wallet as any).signAndExecuteTransaction({
-            transaction: transaction,
+            transaction: txBytes as any,
             account: this.connectedAccount,
             chain: 'sui:testnet',
             options: txOptions,
