@@ -3,10 +3,10 @@
 import { ProfileSection } from "@/components/profile-page/Profile";
 import { Box, Flex, Heading } from "@chakra-ui/react";
 import { useEffect } from "react";
-import { useOneChainWallet } from "@/hooks/useOneChainWallet";
+import { useDappKit } from "@/hooks/useDappKit";
 
 export default function ProfilePage() {
-  const { account, connect, isConnected } = useOneChainWallet();
+  const { account, connect, isConnected } = useDappKit();
   
   useEffect(() => {
     if (!isConnected) {

@@ -31,6 +31,7 @@
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@harmony-js/core": "^0.1.57",
+    "@mysten/dapp-kit": "^0.14.53",
     "@mysten/sui": "^1.37.5",
     "@mysten/sui.js": "^0.54.1",
     "@oneid-xyz/inspect": "^1.1.1",

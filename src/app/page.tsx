@@ -33,7 +33,7 @@ import { keyframes } from "@emotion/react";
 import { FaArrowRight, FaChartLine, FaGlobe, FaShieldAlt, FaStar, FaArrowUp } from "react-icons/fa";
 import { FiAlertCircle } from "react-icons/fi";
 import { motion } from "framer-motion";
-import { useOneChainWallet } from "@/hooks/useOneChainWallet";
+import { useDappKit } from "@/hooks/useDappKit";
 import { useRouter } from "next/navigation";
 
 const MotionBox = motion(Box);
@@ -57,7 +57,7 @@ const shimmer = keyframes`
 `;
 
 export default function Home() {
-  const { isConnected } = useOneChainWallet();
+  const { isConnected } = useDappKit();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const router = useRouter();
 

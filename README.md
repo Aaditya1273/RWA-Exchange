@@ -1,18 +1,18 @@
 
 <div align="center">
 
-  <h1>OneRWA Marketplace</h1>
+  <h1>🏠 OneRWA Marketplace</h1>
   
-  <p><strong>A decentralized marketplace for tokenized Real-World Assets (RWA) with NFT fractionalization capabilities.</strong></p>
+  <p><strong>A decentralized marketplace for tokenized Real-World Assets (RWA) with fractional ownership on OneChain.</strong></p>
   
-  <p><strong>🚀 This hackathon demo runs fully on OneChain - the next-generation blockchain for real-world asset tokenization.</strong></p>
+  <p><strong>🚀 Built on OneChain - the Sui-based blockchain optimized for real-world asset tokenization.</strong></p>
   
   <p>
     <a href="https://nextjs.org/" target="_blank"><img src="https://img.shields.io/badge/Next.js-14-black?logo=next.js" alt="Next.js" /></a>
     <a href="https://www.typescriptlang.org/" target="_blank"><img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
-    <a href="https://hardhat.org/" target="_blank"><img src="https://img.shields.io/badge/Hardhat-3-FFEA00?logo=ethereum&logoColor=black" alt="Hardhat" /></a>
     <a href="https://chakra-ui.com/" target="_blank"><img src="https://img.shields.io/badge/Chakra%20UI-2-319795?logo=chakraui&logoColor=white" alt="Chakra UI" /></a>
-    <a href="https://thirdweb.com/" target="_blank"><img src="https://img.shields.io/badge/thirdweb-5-2D2D2D?logo=web3.js&logoColor=white" alt="thirdweb" /></a>
+    <a href="https://sui.io/" target="_blank"><img src="https://img.shields.io/badge/Move-Language-4DA2FF?logo=sui&logoColor=white" alt="Move" /></a>
+    <a href="https://onechain.network/" target="_blank"><img src="https://img.shields.io/badge/OneChain-Testnet-00D4AA?logo=blockchain&logoColor=white" alt="OneChain" /></a>
   </p>
 </div>
 
@@ -57,11 +57,11 @@
 - **Transaction Management**: Comprehensive error handling and success notifications
 - **Multi-token Support**: Native tokens and ERC20 token payments
 
-### 💳 **Enhanced Wallet Integration**
-- **Universal Wallet Support**: MetaMask, WalletConnect, Coinbase Wallet, and more
-- **Seamless Connection**: One-click wallet connection with automatic chain switching
-- **Mobile Optimized**: Perfect wallet integration for mobile devices
-- **Security First**: Secure transaction handling with user confirmations
+### 💳 **OneChain Wallet Integration**
+- **OneWallet Support**: Native integration with OneChain Wallet via Wallet Standard
+- **Seamless Connection**: One-click wallet connection with account detection
+- **Transaction Signing**: Secure transaction signing with gas fee display
+- **Security First**: All transactions require user approval in wallet popup
 
 ### 🔍 **Advanced Marketplace**
 - **Smart Search**: Real-time search with filtering by asset type and category
@@ -75,24 +75,21 @@
 - **Performance Metrics**: ROI tracking and investment history
 - **Multi-chain Portfolio**: Unified view across all supported networks
 
-## 🏗️ Smart Contracts
+## 🏗️ Smart Contracts (Move Language)
 
-This project includes three core smart contracts for RWA tokenization and fractionalization:
+This project uses Move smart contracts deployed on OneChain:
 
-### **PropertyNFT.sol**
-- ERC721 contract for minting property-backed NFTs
-- Owner-controlled minting with metadata URI support
-- Represents unique real-world assets as non-fungible tokens
+### **property_nft.move**
+- **PropertyNFT Object**: Represents unique real-world properties as NFTs
+- **Built-in Fractionalization**: Properties have `totalShares` and `availableShares` fields
+- **Investment Function**: Users can buy fractional shares directly from the property
+- **Investment NFT**: Each investment creates an Investment object tracking shares owned
 
-### **Fractionalizer.sol**
-- Core contract for fractionalizing PropertyNFTs into ERC20 tokens
-- Allows NFT owners to split ownership into tradeable fractions
-- Enables redemption when all fractions are collected by one owner
-
-### **Fraction.sol**
-- ERC20 token representing fractional ownership of an NFT
-- Minted by the Fractionalizer contract
-- Burnable tokens for NFT redemption process
+### **Key Features**
+- **create_property**: Mint a new PropertyNFT with metadata and share configuration
+- **invest**: Buy fractional shares by paying OCT tokens
+- **transfer_investment**: Transfer Investment NFTs to other users
+- **No separate fractionalization step**: Shares are built into the PropertyNFT structure
 
 ## 🔗 OneChain Integration Benefits
 
@@ -113,42 +110,41 @@ This project includes three core smart contracts for RWA tokenization and fracti
 
 ## Tech Stack
 
-- **Blockchain**: OneChain Network (Primary), Multi-chain support
-- **Frontend**: Next.js 14, React 18, TypeScript, Chakra UI
-- **Web3 SDK**: thirdweb v5 with OneChain integration
-- **Smart Contracts**: Solidity 0.8.24, OpenZeppelin v5.4.0, Hardhat v3
-- **RWA Contracts**: PropertyNFT, Fractionalizer, Fraction ERC20
-- **State Management**: @tanstack/react-query
-- **Styling**: Framer Motion, Chakra UI with custom themes
+- **Blockchain**: OneChain Testnet (Sui-based)
+- **Frontend**: Next.js 14, React 18, TypeScript
+- **UI Library**: Chakra UI with custom themes
+- **Web3 SDK**: @mysten/sui for OneChain interactions
+- **Smart Contracts**: Move language (property_nft.move)
+- **Wallet Integration**: Wallet Standard protocol for OneWallet
+- **State Management**: React hooks and context
+- **File Storage**: IPFS via Pinata for NFT metadata
+- **Styling**: Chakra UI components with responsive design
 
-## Supported Networks
+## Supported Network
 
-### Primary Network
-- **OneChain Testnet** (Chain ID: 1001) - Default active network
-- **OneChain Mainnet** (Chain ID: 1000) - Production network
+### OneChain Testnet
+- **RPC URL**: https://rpc-testnet.onelabs.cc:443
+- **Chain Identifier**: `onechain:testnet`
+- **Native Token**: OCT (OneChain Token)
+- **Gas Coin Type**: `0x2::oct::OCT`
+- **Explorer**: https://onescan.cc/testnet/home
+- **Faucet**: https://faucet-testnet.onelabs.cc
 
-### Legacy Networks (Secondary Support)
-- Avalanche Fuji Testnet (Chain ID: 43113)
-- Polygon Amoy Testnet (Chain ID: 80002)  
-- Sepolia Testnet (Chain ID: 11155111)
+## Move Package Deployment
 
-## OneChain Contract Addresses
+Your deployed Move package address should be set in `.env.local`:
 
-### Testnet (Chain ID: 1001)
-```
-PropertyNFT:    0x0000000000000000000000000000000000000000  # Update after deployment
-Fractionalizer: 0x0000000000000000000000000000000000000000  # Update after deployment
-Marketplace:    0x0000000000000000000000000000000000000000  # Update after deployment
-```
-
-### Mainnet (Chain ID: 1000)
-```
-PropertyNFT:    0x0000000000000000000000000000000000000000  # Update after deployment
-Fractionalizer: 0x0000000000000000000000000000000000000000  # Update after deployment
-Marketplace:    0x0000000000000000000000000000000000000000  # Update after deployment
+```env
+NEXT_PUBLIC_RWA_PACKAGE_ID=YOUR_PACKAGE_ID_HERE
 ```
 
-> **Note**: Replace the placeholder addresses (0x000...) with actual deployed contract addresses after running the deployment scripts.
+To deploy your own package:
+```bash
+one move build
+one client publish --gas-budget 100000000
+```
+
+The package ID will be displayed in the output after successful deployment.
 
 
 ## 🏗️ Property NFT Creation → Fractionalization → Listing Flow
@@ -310,25 +306,27 @@ public entry fun transfer_investment(
 
 #### Create Property
 ```bash
-sui client call \
-  --package 0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2 \
+one client call \
+  --package YOUR_PACKAGE_ID \
   --module property_nft \
   --function create_property \
   --args "Sunset Villa" "Luxury beachfront property" \
          "https://example.com/villa.jpg" "Miami Beach" \
-         "Residential" 1000000 10000 1 "8.5%" \
-  --gas-budget 10000000
+         "Residential" 1000000 10000 100 "8.5%" \
+  --gas-budget 50000000
 ```
 
 #### Invest in Property
 ```bash
-sui client call \
-  --package 0x7b8e0864967427679b4e129f79dc332a885c6087ec9e187b53451a9006ee15f2 \
+one client call \
+  --package YOUR_PACKAGE_ID \
   --module property_nft \
   --function invest \
-  --args [PROPERTY_ID] [COIN_ID] 100 \
+  --args [PROPERTY_OBJECT_ID] [COIN_OBJECT_ID] 100 \
   --gas-budget 50000000
 ```
+
+> **Note**: Replace `YOUR_PACKAGE_ID` with your deployed package ID, and use actual object IDs for property and coin.
 
 ### Benefits
 
@@ -388,9 +386,13 @@ flowchart TD
 ## 🚀 Quick Start - OneChain Testnet
 
 ### Prerequisites
-- Node.js 18+ and npm installed
-- OneChain CLI installed (for Move contract deployment)
-- OneChain testnet wallet with OCT tokens
+- **Node.js 18+** and npm installed
+- **OneChain CLI** installed (for Move contract deployment)
+  - Install from: https://docs.onechain.network
+- **OneWallet** browser extension
+  - Install from OneChain official website
+- **OCT Tokens** for gas fees
+  - Get from faucet: https://faucet-testnet.onelabs.cc
 
 ### Deploy and Run in 5 Minutes
 
@@ -413,7 +415,13 @@ Required environment variables:
 NEXT_PUBLIC_ONECHAIN_RPC_URL=https://rpc-testnet.onelabs.cc:443
 NEXT_PUBLIC_ONECHAIN_NETWORK=testnet
 NEXT_PUBLIC_RWA_PACKAGE_ID=YOUR_PACKAGE_ID
+
+# Pinata IPFS (for image uploads)
+NEXT_PUBLIC_PINATA_JWT=your_pinata_jwt_token
+NEXT_PUBLIC_PINATA_GATEWAY=your_pinata_gateway_url
 ```
+
+> **Important**: For Vercel deployment, add these environment variables in the Vercel dashboard under Settings → Environment Variables.
 
 #### 3. Deploy Move Package (If Needed)
 ```bash
@@ -474,10 +482,11 @@ Open [http://localhost:3000](http://localhost:3000) to view the marketplace.
 - ⚠️ **No Real Funds**: Do not use with real money on mainnet
 
 #### Technical Limitations
-- **Balance Fetching**: Using type assertion workaround instead of proper SuiClient implementation
-- **Wallet Import**: Private key import functionality not fully implemented
-- **Transaction Confirmation**: May take 5-10 seconds for finality
-- **RPC Timeouts**: OneChain RPC may occasionally timeout, retry if needed
+- **OneWallet Only**: Currently only supports OneWallet browser extension
+- **Manual Gas Selection**: Gas coins must be manually selected for transactions
+- **Transaction Confirmation**: May take 5-10 seconds for finality on testnet
+- **RPC Timeouts**: OneChain testnet RPC may occasionally timeout, retry if needed
+- **Network Fee Display**: Requires building transaction before passing to wallet
 
 #### Feature Gaps
 - **Dividend Distribution**: Manual process, not automated
@@ -493,11 +502,11 @@ Open [http://localhost:3000](http://localhost:3000) to view the marketplace.
 - Some wallet connections may require page refresh
 - Explorer links may not work if testnet is down
 
-#### Smart Contracts
-- PropertyCap must be held to manage property
-- No refund mechanism if property sale fails
-- Dividend calculation is simplified (no time-weighting)
-- Treasury management is basic (no yield generation)
+#### Smart Contracts (Move)
+- Investment NFTs are non-transferable by default (requires custom transfer function)
+- No refund mechanism if property investment fails
+- Rental yield distribution not automated (manual process)
+- Share price is fixed at creation (no dynamic pricing)
 
 #### Network
 - OneChain testnet may have occasional downtime
@@ -508,11 +517,12 @@ Open [http://localhost:3000](http://localhost:3000) to view the marketplace.
 
 ⚠️ **IMPORTANT SECURITY WARNINGS**:
 
-1. **Private Keys**: Currently stored in localStorage (NOT production-ready)
-2. **No Audit**: Smart contracts have not been audited by security professionals
-3. **Test Tokens Only**: Only use testnet ONE tokens, never mainnet funds
-4. **No Insurance**: No protection against bugs or exploits
-5. **Experimental**: This is experimental software, use at your own risk
+1. **Wallet Security**: Always verify transaction details in OneWallet before signing
+2. **No Audit**: Move smart contracts have not been audited by security professionals
+3. **Test Tokens Only**: Only use testnet OCT tokens, never mainnet funds
+4. **No Insurance**: No protection against bugs or exploits in smart contracts
+5. **Experimental**: This is experimental software for educational purposes only
+6. **Gas Fees**: Always ensure you have sufficient OCT for gas fees (~0.05 OCT per transaction)
 
 ### Recommended Use Cases
 
@@ -548,9 +558,58 @@ Open [http://localhost:3000](http://localhost:3000) to view the marketplace.
 
 If you encounter issues:
 1. Check the [Troubleshooting](#troubleshooting) section below
-2. Review [ONECHAIN_INTEGRATION.md](./ONECHAIN_INTEGRATION.md)
-3. Visit OneChain documentation: https://docs.onechain.network
+2. Visit OneChain documentation: https://docs.onechain.network
+3. Check OneChain faucet for OCT tokens: https://faucet-testnet.onelabs.cc
 4. Open an issue on GitHub
+
+---
+
+## 🔧 Technical Deep Dive: Wallet Integration
+
+### Challenge: OneWallet Sign Button Disabled
+
+During development, we encountered a critical issue where the OneWallet Sign button remained disabled when creating NFTs. Here's how we solved it:
+
+#### Root Causes Identified:
+1. **Missing Gas Owner**: The `gasData.owner` field was null
+2. **Zero Network Fee**: Wallet couldn't calculate gas fees
+3. **Transaction Format**: Wallet expected specific transaction structure
+
+#### Solution Implemented:
+```typescript
+// 1. Manually fetch and set gas payment coins
+const gasCoins = await client.getCoins({
+  owner: address,
+  coinType: '0x2::oct::OCT'
+});
+
+transaction.setGasPayment(gasCoins.data.map(coin => ({
+  objectId: coin.coinObjectId,
+  version: coin.version,
+  digest: coin.digest
+})));
+
+// 2. Explicitly set gas owner
+transaction.setGasOwner(address);
+
+// 3. Build transaction to populate gas data
+await transaction.build({ client });
+
+// 4. Pass Transaction object (not bytes) to wallet
+await wallet.signAndExecuteTransaction({
+  transaction: transaction,  // Has toJSON() method
+  account: connectedAccount,
+  chain: 'onechain:testnet'
+});
+```
+
+#### Key Learnings:
+- OneWallet requires the **Transaction object** (not bytes) because it needs the `toJSON()` method
+- Gas data must be **populated before** passing to wallet (via `build()`)
+- Gas owner must be **explicitly set** to match the sender address
+- Chain identifier must be `'onechain:testnet'` (not `'sui:testnet'`)
+
+This implementation ensures the wallet can properly display transaction details and calculate network fees.
 
 ```
 

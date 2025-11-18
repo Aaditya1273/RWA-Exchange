@@ -307,28 +307,10 @@ class OneChainWalletStandardService {
         console.log('✅ Sender already set to:', txData.sender);
       }
       
-      // CRITICAL: Manually set gas payment before building
-      console.log('💰 Fetching gas coins...');
-      const gasCoins = await this.oneChainClient.getCoins({
-        owner: this.connectedAccount.address,
-        coinType: '0x2::oct::OCT',
-      });
-      
-      console.log('💰 Found', gasCoins.data.length, 'OCT coins');
-      console.log('💰 Total balance:', gasCoins.data.reduce((sum: number, coin: any) => sum + parseInt(coin.balance), 0));
-      
-      if (gasCoins.data.length === 0) {
-        throw new Error('No OCT coins found in your wallet. Please get OCT from the faucet: https://faucet-testnet.onelabs.cc');
-      }
-      
-      // Manually set gas payment to avoid SDK auto-selection issues
-      console.log('⛽ Setting gas payment manually...');
-      transaction.setGasPayment(gasCoins.data.map((coin: any) => ({
-        objectId: coin.coinObjectId,
-        version: coin.version,
-        digest: coin.digest,
-      })));
-      console.log('✅ Gas payment set with', gasCoins.data.length, 'coins');
+      // CRITICAL FIX FOR VERCEL: Don't manually set gas payment
+      // Let the wallet handle gas selection automatically
+      // This is the key difference between local and Vercel deployment
+      console.log('⛽ Letting wallet handle gas payment automatically (Vercel fix)');
       
       // CRITICAL: Set gas owner explicitly (must match sender)
       console.log('👤 Setting gas owner to:', this.connectedAccount.address);
@@ -339,11 +321,10 @@ class OneChainWalletStandardService {
       // The wallet will handle expiration automatically
       console.log('⏰ Skipping expiration (wallet will set automatically)');
       
-      // CRITICAL: Build transaction to populate gas data, but pass Transaction object to wallet
-      // Building populates the internal gas data, then wallet can read it via toJSON()
-      console.log('🔨 Building transaction to populate gas data...');
-      await transaction.build({ client: this.oneChainClient });
-      console.log('✅ Transaction built internally, gas data populated');
+      // CRITICAL FIX: Don't build the transaction before passing to wallet
+      // The wallet needs to build it itself to properly calculate gas fees
+      // This is why the Sign button was disabled on Vercel
+      console.log('🔨 Skipping pre-build - wallet will build and calculate gas fees');
       
       // Pass the Transaction object (NOT bytes) to the wallet
       // The wallet needs toJSON() method which only Transaction object has

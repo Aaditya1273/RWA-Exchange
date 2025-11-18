@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Providers } from "@/components/shared/Providers";
+import { DappKitProvider } from "@/providers/DappKitProvider";
 import { Navbar } from "@/components/shared/Navbar";
 
 export const metadata: Metadata = {
@@ -24,10 +25,12 @@ export default function RootLayout({
 				/>
 			</head>
 			<body style={{ paddingBottom: "100px", fontFamily: "Inter, sans-serif" }}>
-				<Providers>
-					<Navbar />
-					{children}
-				</Providers>
+				<DappKitProvider>
+					<Providers>
+						<Navbar />
+						{children}
+					</Providers>
+				</DappKitProvider>
 			</body>
 		</html>
 	);

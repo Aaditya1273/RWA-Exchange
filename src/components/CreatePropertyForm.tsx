@@ -24,13 +24,12 @@ import {
   Progress,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { useOneChainWallet } from "@/hooks/useOneChainWallet";
+import { useDappKit } from "@/hooks/useDappKit";
 import { propertyContractService, PropertyData } from "@/services/propertyContract";
-import { oneChainService } from "@/services/onechain";
 import { useRouter } from "next/navigation";
 
 export function CreatePropertyForm() {
-  const { account, isConnected } = useOneChainWallet();
+  const { account, isConnected, signAndExecuteTransaction } = useDappKit();
   const toast = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,12 +64,6 @@ export function CreatePropertyForm() {
     setProgress(10);
 
     try {
-      // Get keypair from localStorage (temporary solution)
-      const savedWallet = localStorage.getItem('onechain_wallet');
-      if (!savedWallet) {
-        throw new Error('No wallet found');
-      }
-
       setProgress(30);
 
       toast({
@@ -82,10 +75,10 @@ export function CreatePropertyForm() {
 
       setProgress(50);
 
-      // Call smart contract with OneChain service
+      // Call smart contract using dapp-kit - REAL BLOCKCHAIN TRANSACTION
       const result = await propertyContractService.createProperty(
         formData,
-        oneChainService
+        signAndExecuteTransaction
       );
 
       setProgress(90);

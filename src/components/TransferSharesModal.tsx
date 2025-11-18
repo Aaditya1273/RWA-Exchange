@@ -22,9 +22,8 @@ import {
   Box,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { useOneChainWallet } from "@/hooks/useOneChainWallet";
+import { useDappKit } from "@/hooks/useDappKit";
 import { propertyContractService } from "@/services/propertyContract";
-import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 
 interface TransferSharesModalProps {
   isOpen: boolean;
@@ -41,7 +40,7 @@ export function TransferSharesModal({
   propertyName,
   shares,
 }: TransferSharesModalProps) {
-  const { account, isConnected } = useOneChainWallet();
+  const { account, isConnected, signAndExecuteTransaction } = useDappKit();
   const toast = useToast();
   const [recipientAddress, setRecipientAddress] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
@@ -74,11 +73,6 @@ export function TransferSharesModal({
     try {
       setProgress(30);
 
-      // Create temporary keypair (in production, use actual wallet keypair)
-      const keypair = new Ed25519Keypair();
-
-      setProgress(50);
-
       toast({
         title: "Transferring Shares",
         description: "Submitting transaction to blockchain...",
@@ -86,11 +80,13 @@ export function TransferSharesModal({
         duration: 2000,
       });
 
-      // Call smart contract
+      setProgress(50);
+
+      // Call smart contract using dapp-kit
       const result = await propertyContractService.transferInvestment(
         investmentId,
         recipientAddress,
-        keypair
+        signAndExecuteTransaction
       );
 
       setProgress(90);

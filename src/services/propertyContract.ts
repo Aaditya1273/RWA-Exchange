@@ -46,17 +46,20 @@ export class PropertyContractService {
   }
 
   /**
-   * Create a new property NFT on the blockchain using wallet standard
+   * Create a new property NFT on the blockchain using dapp-kit
+   * This is the recommended approach - much simpler and more reliable
    */
   async createProperty(
     propertyData: PropertyData,
-    walletService?: any
+    signAndExecuteTransaction: (tx: Transaction) => Promise<any>
   ): Promise<CreatePropertyResult> {
     try {
-      // Use the old Transaction class that the wallet expects
+      console.log('🏗️ Creating property NFT transaction...');
+      
+      // Create transaction
       const tx = new Transaction();
 
-      // Call the create_property function with proper argument encoding
+      // Call the create_property function
       tx.moveCall({
         target: `${PACKAGE_ID}::property_nft::create_property`,
         arguments: [
@@ -73,41 +76,14 @@ export class PropertyContractService {
       });
 
       // Set gas budget for OneChain
-      tx.setGasBudget(10_000_000); // 0.01 OCT
-      console.log('⛽ Gas budget set:', '0.01 OCT (10,000,000 MIST)');
+      tx.setGasBudget(100_000_000); // 0.1 OCT for property creation
+      console.log('⛽ Gas budget set: 0.1 OCT');
 
-      let result;
-      
-      // Use wallet service if provided, otherwise use direct client
-      if (walletService && walletService.signAndExecuteTransaction) {
-        console.log('📝 Signing transaction with wallet...');
-        result = await walletService.signAndExecuteTransaction(tx, {
-          showEffects: true,
-          showObjectChanges: true,
-          showEvents: true,
-        });
-      } else {
-        throw new Error('Wallet service required for transaction signing');
-      }
+      // Execute transaction using dapp-kit
+      console.log('📝 Executing transaction with dapp-kit...');
+      const result = await signAndExecuteTransaction(tx);
 
-      // Check if this was a mock transaction
-      if (result.__MOCK__) {
-        console.warn('⚠️ MOCK TRANSACTION - Not a real blockchain transaction');
-        return {
-          success: false,
-          error: 'Transaction was mocked. OneChain wallet integration needs fixing for real transactions.',
-        };
-      }
-
-      // VERIFY REAL BLOCKCHAIN TRANSACTION
-      console.log('✅ REAL BLOCKCHAIN TRANSACTION CONFIRMED!');
-      console.log('📊 Transaction Details:', {
-        digest: result.digest,
-        effects: result.effects?.status,
-        gasUsed: result.effects?.gasUsed,
-        objectChanges: result.objectChanges?.length,
-        events: result.events?.length
-      });
+      console.log('✅ Transaction successful!', result.digest);
 
       // Extract property ID from object changes
       const createdObjects = result.objectChanges?.filter(
@@ -126,7 +102,7 @@ export class PropertyContractService {
         propertyId: propertyObject?.objectId,
       };
     } catch (error) {
-      console.error('Error creating property:', error);
+      console.error('❌ Error creating property:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -152,88 +128,49 @@ export class PropertyContractService {
   }
 
   /**
-   * Invest in a property (buy fractional shares) using wallet standard
+   * Invest in a property (buy fractional shares) using dapp-kit
    */
   async investInProperty(
     propertyId: string,
     sharesToBuy: number,
     paymentAmount: number,
-    walletService?: any
+    signAndExecuteTransaction: (tx: Transaction) => Promise<any>
   ): Promise<InvestResult> {
     try {
       console.log('💰 Creating investment transaction...', {
         propertyId,
         sharesToBuy,
-        paymentAmount,
-        hasWalletService: !!walletService
+        paymentAmount
       });
 
       const tx = new Transaction();
-      console.log('✅ Transaction object created');
 
-      // IMPORTANT: pricePerShare is stored in OCT (not USD)
-      // paymentAmount = sharesToBuy * pricePerShare (in OCT)
       // Convert OCT to MIST (1 OCT = 1,000,000,000 MIST)
       const paymentInMist = Math.floor(paymentAmount * 1_000_000_000);
-      console.log('💰 Payment calculation:', {
-        shares: sharesToBuy,
-        pricePerShareOCT: paymentAmount / sharesToBuy,
-        totalOCT: paymentAmount,
-        totalMIST: paymentInMist
-      });
+      console.log('💰 Payment:', paymentAmount, 'OCT =', paymentInMist, 'MIST');
 
       // Split coins for payment
       const [coin] = tx.splitCoins(tx.gas, [paymentInMist]);
-      console.log('✅ Coin split successful');
 
-      // Call the invest function - use object() method for object references
-      // In @mysten/sui/transactions, object references use tx.object()
+      // Call the invest function
       tx.moveCall({
         target: `${PACKAGE_ID}::property_nft::invest`,
         arguments: [
-          typeof tx.object === 'function' ? tx.object(propertyId) : tx.pure.address(propertyId),
-          coin,                         // Payment coin from splitCoins
-          tx.pure.u64(sharesToBuy),    // Number of shares as u64
+          tx.object(propertyId),       // Property NFT object
+          coin,                         // Payment coin
+          tx.pure.u64(sharesToBuy),    // Number of shares
         ],
       });
-      console.log('✅ moveCall added to transaction');
 
-      // Set gas budget for OneChain
+      // Set gas budget
       tx.setGasBudget(50_000_000); // 0.05 OCT
-      console.log('⛽ Gas budget set:', '0.05 OCT (50,000,000 MIST)');
+      console.log('⛽ Gas budget set: 0.05 OCT');
 
-      let result;
-      
-      // Use wallet service if provided
-      if (walletService && walletService.signAndExecuteTransaction) {
-        console.log('📝 Signing investment transaction with wallet...');
-        result = await walletService.signAndExecuteTransaction(tx, {
-          showEffects: true,
-          showObjectChanges: true,
-          showEvents: true,
-        });
-      } else {
-        throw new Error('Wallet service required for transaction signing');
-      }
+      // Execute transaction using dapp-kit
+      console.log('📝 Executing investment transaction...');
+      const result = await signAndExecuteTransaction(tx);
 
-      // Check if this was a mock transaction
-      if (result.__MOCK__) {
-        console.warn('⚠️ MOCK INVESTMENT - Not a real blockchain transaction');
-        return {
-          success: false,
-          error: 'Investment was mocked. OneChain wallet integration needs fixing for real transactions.',
-        };
-      }
-
-      // VERIFY REAL BLOCKCHAIN TRANSACTION
-      console.log('✅ REAL BLOCKCHAIN INVESTMENT CONFIRMED!');
-      console.log('📊 Transaction Details:', {
-        digest: result.digest,
-        effects: result.effects?.status,
-        gasUsed: result.effects?.gasUsed,
-        objectChanges: result.objectChanges?.length,
-        events: result.events?.length
-      });
+      console.log('✅ Investment successful!', result.digest);
 
       // Extract investment ID from created objects
       const createdObjects = result.objectChanges?.filter(
@@ -245,7 +182,6 @@ export class PropertyContractService {
       );
 
       console.log('💰 Investment NFT Created:', investmentObject?.objectId);
-      console.log('📈 Shares Purchased:', sharesToBuy);
 
       return {
         success: true,
@@ -254,7 +190,7 @@ export class PropertyContractService {
         sharesPurchased: sharesToBuy,
       };
     } catch (error) {
-      console.error('Error investing in property:', error);
+      console.error('❌ Error investing in property:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -263,14 +199,16 @@ export class PropertyContractService {
   }
 
   /**
-   * Transfer investment shares to another address
+   * Transfer investment shares to another address using dapp-kit
    */
   async transferInvestment(
     investmentId: string,
     recipientAddress: string,
-    keypair: Ed25519Keypair
+    signAndExecuteTransaction: (tx: Transaction) => Promise<any>
   ): Promise<TransferResult> {
     try {
+      console.log('🔄 Creating transfer transaction...');
+      
       const tx = new Transaction();
 
       tx.moveCall({
@@ -281,24 +219,21 @@ export class PropertyContractService {
         ],
       });
 
-      tx.setGasBudget(30_000_000);
+      tx.setGasBudget(30_000_000); // 0.03 OCT
+      console.log('⛽ Gas budget set: 0.03 OCT');
 
-      // Note: This function uses keypair directly (not wallet service)
-      // For wallet integration, this should be updated to use walletService
-      const result = await this.client.signAndExecuteTransaction({
-        signer: keypair,
-        transaction: tx,
-        options: {
-          showEffects: true,
-        },
-      });
+      // Execute transaction using dapp-kit
+      console.log('📝 Executing transfer transaction...');
+      const result = await signAndExecuteTransaction(tx);
+
+      console.log('✅ Transfer successful!', result.digest);
 
       return {
         success: true,
         transactionDigest: result.digest,
       };
     } catch (error) {
-      console.error('Error transferring investment:', error);
+      console.error('❌ Error transferring investment:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',

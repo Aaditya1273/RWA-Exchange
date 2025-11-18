@@ -20,8 +20,8 @@ import { FaRegMoon } from "react-icons/fa";
 import { FiUser } from "react-icons/fi";
 import { IoSunny } from "react-icons/io5";
 import { SideMenu } from "./SideMenu";
-import { OneChainWalletButton } from "./OneChainWallet";
-import { useOneChainWallet } from "@/hooks/useOneChainWallet";
+import { DappKitWalletButton } from "@/components/DappKitWalletButton";
+import { useDappKit } from "@/hooks/useDappKit";
 import { usePathname } from "next/navigation";
 
 export function Navbar() {
@@ -29,7 +29,7 @@ export function Navbar() {
     isConnected, 
     account, 
     disconnect 
-  } = useOneChainWallet();
+  } = useDappKit();
 
   const pathname = usePathname();
 
@@ -139,7 +139,7 @@ export function Navbar() {
 
           <ToggleThemeButton />
 
-          <OneChainWalletButton />
+          <DappKitWalletButton />
 
           {isConnected && account?.address && (
             <ProfileButton address={account.address} onLogout={handleLogout} />

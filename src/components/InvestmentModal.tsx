@@ -24,7 +24,7 @@ import {
   Box,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { useWalletStandard } from "@/hooks/useWalletStandard";
+import { useDappKit } from "@/hooks/useDappKit";
 import { propertyContractService } from "@/services/propertyContract";
 
 interface InvestmentModalProps {
@@ -48,7 +48,7 @@ export function InvestmentModal({
   totalShares,
   onSuccess,
 }: InvestmentModalProps) {
-  const { account, isConnected, balance, signAndExecuteTransaction } = useWalletStandard();
+  const { account, isConnected, signAndExecuteTransaction } = useDappKit();
   const toast = useToast();
   const [sharesToBuy, setSharesToBuy] = useState(1);
   const [isInvesting, setIsInvesting] = useState(false);
@@ -92,17 +92,12 @@ export function InvestmentModal({
 
       setProgress(50);
 
-      // Create wallet service object for the contract
-      const walletService = {
-        signAndExecuteTransaction
-      };
-
-      // Call smart contract with wallet service - REAL BLOCKCHAIN TRANSACTION
+      // Call smart contract using dapp-kit - REAL BLOCKCHAIN TRANSACTION
       const result = await propertyContractService.investInProperty(
         propertyId,
         sharesToBuy,
         totalCost,
-        walletService
+        signAndExecuteTransaction
       );
 
       setProgress(90);

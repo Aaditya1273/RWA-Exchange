@@ -21,7 +21,7 @@ import { useState, useEffect } from "react";
 import { WalletGuard } from "@/components/WalletGuard";
 import { TransferSharesModal } from "@/components/TransferSharesModal";
 import { FaExchangeAlt, FaChartLine } from "react-icons/fa";
-import { useOneChainWallet } from "@/hooks/useOneChainWallet";
+import { useDappKit } from "@/hooks/useDappKit";
 import { propertyContractService } from "@/services/propertyContract";
 
 export default function MyInvestmentsPage() {
@@ -29,7 +29,7 @@ export default function MyInvestmentsPage() {
   const [selectedInvestment, setSelectedInvestment] = useState<any>(null);
   const [investments, setInvestments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { account } = useOneChainWallet();
+  const { account } = useDappKit();
 
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.600");
