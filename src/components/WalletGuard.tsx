@@ -13,7 +13,7 @@ import {
   Icon,
   useDisclosure,
 } from "@chakra-ui/react";
-import { useOneChainWallet } from "@/hooks/useOneChainWallet";
+import { useDappKit } from "@/hooks/useDappKit";
 import { useEffect, ReactNode } from "react";
 import { FiAlertCircle } from "react-icons/fi";
 import { useRouter } from "next/navigation";
@@ -24,7 +24,7 @@ interface WalletGuardProps {
 }
 
 export function WalletGuard({ children, requireWallet = false }: WalletGuardProps) {
-  const { isConnected } = useOneChainWallet();
+  const { isConnected } = useDappKit();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const router = useRouter();
 
