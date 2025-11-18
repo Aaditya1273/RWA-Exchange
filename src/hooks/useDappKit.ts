@@ -6,8 +6,10 @@ import {
   useConnectWallet,
   useWallets
 } from '@mysten/dapp-kit';
-import { Transaction } from '@mysten/sui/transactions';
 import { useState, useEffect } from 'react';
+
+// Import Transaction from dapp-kit's bundled version to avoid type conflicts
+type Transaction = Parameters<ReturnType<typeof useSignAndExecuteTransaction>['mutate']>[0]['transaction'];
 
 export function useDappKit() {
   const account = useCurrentAccount();
@@ -62,13 +64,13 @@ export function useDappKit() {
   };
 
   const signAndExecuteTransaction = async (
-    transaction: Transaction,
+    transaction: any, // Use any to avoid type conflicts between different @mysten/sui versions
     options?: { showEffects?: boolean; showObjectChanges?: boolean; showEvents?: boolean }
   ): Promise<any> => {
     return new Promise((resolve, reject) => {
       signAndExecute(
         {
-          transaction,
+          transaction: transaction as any,
           options: options || {
             showEffects: true,
             showObjectChanges: true,
