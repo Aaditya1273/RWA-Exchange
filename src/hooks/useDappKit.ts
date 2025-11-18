@@ -69,7 +69,7 @@ export function useDappKit() {
     return new Promise((resolve, reject) => {
       signAndExecute(
         {
-          transaction: transaction as any,
+          transaction,  // Pass transaction directly without casting
         },
         {
           onSuccess: (result) => {

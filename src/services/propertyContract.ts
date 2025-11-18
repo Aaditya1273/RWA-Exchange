@@ -74,9 +74,9 @@ export class PropertyContractService {
         ],
       });
 
-      // Set gas budget for OneChain
-      tx.setGasBudget(100_000_000); // 0.1 OCT for property creation
-      console.log('⛽ Gas budget set: 0.1 OCT');
+      // DON'T set gas budget - let dapp-kit calculate it automatically
+      // This is the key fix for Vercel deployment!
+      console.log('⛽ Letting dapp-kit calculate gas automatically');
 
       // Execute transaction using dapp-kit
       console.log('📝 Executing transaction with dapp-kit...');
@@ -161,9 +161,8 @@ export class PropertyContractService {
         ],
       });
 
-      // Set gas budget
-      tx.setGasBudget(50_000_000); // 0.05 OCT
-      console.log('⛽ Gas budget set: 0.05 OCT');
+      // DON'T set gas budget - let dapp-kit calculate it automatically
+      console.log('⛽ Letting dapp-kit calculate gas automatically');
 
       // Execute transaction using dapp-kit
       console.log('📝 Executing investment transaction...');
