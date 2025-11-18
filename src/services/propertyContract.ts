@@ -55,8 +55,8 @@ export class PropertyContractService {
     try {
       console.log('🏗️ Creating property NFT transaction...');
       
-      // Create transaction
-      const tx = new Transaction();
+      // Cast to any to access dapp-kit transaction methods - EXACTLY like helper repo
+      const tx = new Transaction() as any;
 
       // Call the create_property function
       tx.moveCall({
@@ -78,7 +78,7 @@ export class PropertyContractService {
       // This is the key fix for Vercel deployment!
       console.log('⛽ Letting dapp-kit calculate gas automatically');
 
-      // Execute transaction using dapp-kit
+      // Execute transaction using dapp-kit - EXACTLY like helper repo
       console.log('📝 Executing transaction with dapp-kit...');
       const result = await signAndExecuteTransaction(tx);
 
@@ -142,13 +142,14 @@ export class PropertyContractService {
         paymentAmount
       });
 
-      const tx = new Transaction();
+      // Cast to any to access dapp-kit transaction methods
+      const tx = new Transaction() as any;
 
-      // Convert OCT to MIST (1 OCT = 1,000,000,000 MIST)
-      const paymentInMist = Math.floor(paymentAmount * 1_000_000_000);
+      // Convert OCT to MIST (1 OCT = 100,000,000 MIST for OneChain)
+      const paymentInMist = Math.floor(paymentAmount * 100_000_000);
       console.log('💰 Payment:', paymentAmount, 'OCT =', paymentInMist, 'MIST');
 
-      // Split coins for payment
+      // Split coins for payment - EXACTLY like helper repo
       const [coin] = tx.splitCoins(tx.gas, [paymentInMist]);
 
       // Call the invest function
@@ -164,7 +165,7 @@ export class PropertyContractService {
       // DON'T set gas budget - let dapp-kit calculate it automatically
       console.log('⛽ Letting dapp-kit calculate gas automatically');
 
-      // Execute transaction using dapp-kit
+      // Execute transaction using dapp-kit - EXACTLY like helper repo
       console.log('📝 Executing investment transaction...');
       const result = await signAndExecuteTransaction(tx);
 
