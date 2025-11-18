@@ -1,35 +1,27 @@
 'use client';
 
-import { SuiClientProvider, WalletProvider, createNetworkConfig } from '@mysten/dapp-kit';
+import { SuiClientProvider, WalletProvider } from '@mysten/dapp-kit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import '@mysten/dapp-kit/dist/index.css';
 
-// OneChain network configuration
-const { networkConfig, useNetworkVariable } = createNetworkConfig({
-  testnet: {
-    url: process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443',
-  },
-  mainnet: {
-    url: process.env.NEXT_PUBLIC_ONECHAIN_MAINNET_RPC_URL || 'https://rpc-mainnet.onelabs.cc:443',
-  },
-});
-
-export { useNetworkVariable };
+// OneChain network configuration - EXACTLY like helper repo
+const ONECHAIN_RPC_URL = process.env.NEXT_PUBLIC_ONECHAIN_RPC_URL || 'https://rpc-testnet.onelabs.cc:443';
+const ONECHAIN_NETWORK = process.env.NEXT_PUBLIC_ONECHAIN_NETWORK || 'testnet';
 
 export function DappKitProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: false,
-        retry: 1,
-      },
+  const [queryClient] = useState(() => new QueryClient());
+
+  // Simple network config like helper repo
+  const networks = {
+    [ONECHAIN_NETWORK]: {
+      url: ONECHAIN_RPC_URL,
     },
-  }));
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
+      <SuiClientProvider networks={networks} defaultNetwork={ONECHAIN_NETWORK}>
         <WalletProvider autoConnect>
           {children}
         </WalletProvider>
