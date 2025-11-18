@@ -142,13 +142,14 @@ export class PropertyContractService {
         paymentAmount
       });
 
-      const tx = new Transaction();
+      // Cast to any to access dapp-kit transaction methods - EXACTLY like helper repo
+      const tx = new Transaction() as any;
 
-      // Convert OCT to MIST (1 OCT = 1,000,000,000 MIST)
-      const paymentInMist = Math.floor(paymentAmount * 1_000_000_000);
+      // Convert OCT to MIST (1 OCT = 100,000,000 MIST for OneChain)
+      const paymentInMist = Math.floor(paymentAmount * 100_000_000);
       console.log('💰 Payment:', paymentAmount, 'OCT =', paymentInMist, 'MIST');
 
-      // Split coins for payment
+      // Split coins for payment - EXACTLY like helper repo
       const [coin] = tx.splitCoins(tx.gas, [paymentInMist]);
 
       // Call the invest function

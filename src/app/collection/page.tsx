@@ -66,15 +66,14 @@ export default function CollectionPage() {
   const textColor = useColorModeValue("gray.600", "gray.300");
   const borderColor = useColorModeValue("gray.200", "gray.600");
 
-  // Fetch properties from blockchain via API route - REAL DATA ONLY
+  // Fetch properties from blockchain - REAL DATA ONLY
   const fetchProperties = async () => {
     setIsLoading(true);
     try {
-      console.log('🔄 Fetching properties from blockchain via API...');
-      const response = await fetch('/api/properties');
-      const data = await response.json();
-      console.log('✅ Fetched', data.properties.length, 'properties');
-      setBlockchainProperties(data.properties);
+      console.log('🔄 Fetching properties from blockchain...');
+      const properties = await propertyContractService.getAllProperties();
+      console.log('✅ Fetched', properties.length, 'properties');
+      setBlockchainProperties(properties);
       setUseBlockchainData(true); // Always use blockchain data
     } catch (error) {
       console.error('❌ Error fetching blockchain properties:', error);
