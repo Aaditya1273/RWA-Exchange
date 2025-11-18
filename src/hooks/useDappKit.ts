@@ -65,17 +65,11 @@ export function useDappKit() {
 
   const signAndExecuteTransaction = async (
     transaction: any, // Use any to avoid type conflicts between different @mysten/sui versions
-    options?: { showEffects?: boolean; showObjectChanges?: boolean; showEvents?: boolean }
   ): Promise<any> => {
     return new Promise((resolve, reject) => {
       signAndExecute(
         {
           transaction: transaction as any,
-          options: options || {
-            showEffects: true,
-            showObjectChanges: true,
-            showEvents: true,
-          },
         },
         {
           onSuccess: (result) => {
