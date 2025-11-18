@@ -131,8 +131,10 @@ module rwa_exchange::property_nft {
             owner,
         });
 
-        // Transfer property and capability to owner
-        transfer::transfer(property, owner);
+        // Make property a shared object so anyone can invest
+        transfer::share_object(property);
+        
+        // Transfer capability to owner
         transfer::transfer(cap, owner);
     }
 
