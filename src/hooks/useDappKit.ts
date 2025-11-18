@@ -64,17 +64,18 @@ export function useDappKit() {
   };
 
   const signAndExecuteTransaction = async (
-    transaction: any, // Use any to avoid type conflicts between different @mysten/sui versions
+    transaction: any,
   ): Promise<any> => {
     return new Promise((resolve, reject) => {
+      // Pass transaction exactly as helper repo does
       signAndExecute(
         {
-          transaction,  // Pass transaction directly without casting
+          transaction: transaction,
         },
         {
           onSuccess: (result) => {
             console.log('✅ Transaction successful:', result);
-            refreshBalance(); // Refresh balance after transaction
+            refreshBalance();
             resolve(result);
           },
           onError: (error) => {
